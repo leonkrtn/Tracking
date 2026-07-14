@@ -4,7 +4,7 @@ import { supabase } from '../lib/supabase'
 // Benutzername wird intern auf eine feste "E-Mail" abgebildet – so kannst du
 // dich einfach mit Benutzername + Passwort anmelden.
 function toEmail(username: string): string {
-  return `${username.trim().toLowerCase()}@geldtracker.local`
+  return `${username.trim().toLowerCase()}@geldtracker.de`
 }
 
 export default function Auth() {
@@ -30,8 +30,9 @@ export default function Auth() {
       if (error) return setMsg(uebersetze(error.message))
       if (!data.session) {
         setMsg(
-          'Konto erstellt, aber Login nicht möglich. Bitte in Supabase unter ' +
-            'Authentication → E-Mail die Option „Confirm email" deaktivieren.',
+          'Konto erstellt, aber Login noch nicht möglich. Bitte in Supabase ' +
+            'unter Authentication → Sign In / Providers → Email die Option ' +
+            '„Confirm email" deaktivieren – dann erneut anmelden.',
         )
       }
       // Bei Erfolg: App wechselt automatisch via onAuthStateChange.
