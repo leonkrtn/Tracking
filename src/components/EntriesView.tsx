@@ -2,21 +2,15 @@ import { useMemo } from 'react'
 import type { Transaction } from '../lib/types'
 import { formatDate, formatEUR, formatEURSigned, monthKeyOf } from '../lib/format'
 import { iconFor } from '../lib/categories'
-import MonthNav from './MonthNav'
+import Icon from './Icon'
 
 interface Props {
   transactions: Transaction[]
   month: string
-  onMonthChange: (m: string) => void
   onEdit: (t: Transaction) => void
 }
 
-export default function EntriesView({
-  transactions,
-  month,
-  onMonthChange,
-  onEdit,
-}: Props) {
+export default function EntriesView({ transactions, month, onEdit }: Props) {
   const monthTx = useMemo(
     () => transactions.filter((t) => monthKeyOf(t.date) === month),
     [transactions, month],
@@ -33,7 +27,6 @@ export default function EntriesView({
   }, [monthTx])
   const balance = income - expense
 
-  // nach Datum gruppieren (bereits absteigend sortiert aus dem Store)
   const groups = useMemo(() => {
     const map = new Map<string, Transaction[]>()
     for (const t of monthTx) {
@@ -45,83 +38,82 @@ export default function EntriesView({
   }, [monthTx])
 
   return (
-    <div className="space-y-4">
-      <MonthNav month={month} onChange={onMonthChange} />
-
-      {/* Saldo-Karte */}
-      <div className="rounded-2xl bg-gradient-to-br from-slate-800 to-slate-900 p-5 text-white shadow-lg dark:from-slate-800 dark:to-black">
-        <p className="text-sm text-slate-300">Saldo diesen Monat</p>
-        <p
-          className={`mt-1 text-4xl font-bold ${
-            balance >= 0 ? 'text-emerald-400' : 'text-red-400'
-          }`}
-        >
-          {formatEURSigned(balance)}
-        </p>
-        <div className="mt-4 flex gap-3">
-          <div className="flex-1 rounded-xl bg-white/10 px-3 py-2">
-            <p className="text-xs text-slate-300">Einnahmen</p>
-            <p className="text-base font-semibold text-emerald-400">
-              {formatEUR(income)}
-            </p>
-          </div>
-          <div className="flex-1 rounded-xl bg-white/10 px-3 py-2">
-            <p className="text-xs text-slate-300">Ausgaben</p>
-            <p className="text-base font-semibold text-red-400">
-              {formatEUR(expense)}
-            </p>
-          </div>
+    <div className="space-y-5">
+      {/* Stat-Kacheln */}
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <div className="rounded-xl border border-slate-200 bg-white p-4">
+          <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
+            Saldo
+          </p>
+          <p
+            className={`mt-1 text-2xl font-semibold tracking-tight ${
+              balance >= 0 ? 'text-slate-900' : 'text-rose-600'
+            }`}
+          >
+            {formatEURSigned(balance)}
+          </p>
+        </div>
+        <div className="rounded-xl border border-slate-200 bg-white p-4">
+          <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
+            Einnahmen
+          </p>
+          <p className="mt-1 text-2xl font-semibold tracking-tight text-emerald-600">
+            {formatEUR(income)}
+          </p>
+        </div>
+        <div className="rounded-xl border border-slate-200 bg-white p-4">
+          <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
+            Ausgaben
+          </p>
+          <p className="mt-1 text-2xl font-semibold tracking-tight text-rose-600">
+            {formatEUR(expense)}
+          </p>
         </div>
       </div>
 
       {/* Liste */}
       {monthTx.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-slate-300 py-16 text-center dark:border-slate-700">
-          <p className="text-4xl">🗒️</p>
-          <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">
-            Noch keine Einträge in diesem Monat.
-          </p>
-          <p className="text-sm text-slate-400">
-            Tippe unten auf „＋", um zu starten.
-          </p>
-        </div>
+        <EmptyState />
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-5">
           {groups.map(([date, items]) => (
             <div key={date}>
-              <p className="mb-1 px-1 text-xs font-medium uppercase tracking-wide text-slate-400">
+              <p className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-400">
                 {formatDate(date)}
               </p>
-              <div className="overflow-hidden rounded-2xl bg-white shadow-sm dark:bg-slate-800">
-                {items.map((t, i) => (
+              <div className="divide-y divide-slate-100 overflow-hidden rounded-xl border border-slate-200 bg-white">
+                {items.map((t) => (
                   <button
                     key={t.id}
                     onClick={() => onEdit(t)}
-                    className={`flex w-full items-center gap-3 px-4 py-3 text-left active:bg-slate-50 dark:active:bg-slate-700/50 ${
-                      i > 0 ? 'border-t border-slate-100 dark:border-slate-700/60' : ''
-                    }`}
+                    className="flex w-full items-center gap-3 px-4 py-3 text-left transition hover:bg-slate-50"
                   >
-                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-100 text-lg dark:bg-slate-700">
-                      {iconFor(t.category)}
+                    <span
+                      className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${
+                        t.kind === 'einnahme'
+                          ? 'bg-emerald-50 text-emerald-600'
+                          : 'bg-slate-100 text-slate-600'
+                      }`}
+                    >
+                      <Icon name={iconFor(t.category)} size={18} />
                     </span>
                     <span className="min-w-0 flex-1">
-                      <span className="block truncate font-medium text-slate-800 dark:text-slate-100">
+                      <span className="block truncate text-sm font-medium text-slate-800">
                         {t.category}
                       </span>
                       {t.note && (
-                        <span className="block truncate text-sm text-slate-400">
+                        <span className="block truncate text-xs text-slate-400">
                           {t.note}
                         </span>
                       )}
                     </span>
                     <span
-                      className={`shrink-0 font-semibold ${
-                        t.kind === 'einnahme' ? 'text-emerald-600' : 'text-slate-800 dark:text-slate-100'
+                      className={`shrink-0 text-sm font-semibold tabular-nums ${
+                        t.kind === 'einnahme' ? 'text-emerald-600' : 'text-slate-900'
                       }`}
                     >
-                      {t.kind === 'einnahme'
-                        ? `+${formatEUR(t.amount)}`
-                        : `−${formatEUR(t.amount)}`}
+                      {t.kind === 'einnahme' ? '+' : '−'}
+                      {formatEUR(t.amount)}
                     </span>
                   </button>
                 ))}
@@ -130,6 +122,22 @@ export default function EntriesView({
           ))}
         </div>
       )}
+    </div>
+  )
+}
+
+function EmptyState() {
+  return (
+    <div className="flex flex-col items-center rounded-xl border border-dashed border-slate-200 bg-white py-16 text-center">
+      <span className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-slate-400">
+        <Icon name="list" size={22} />
+      </span>
+      <p className="text-sm font-medium text-slate-600">
+        Noch keine Einträge in diesem Monat
+      </p>
+      <p className="mt-1 text-sm text-slate-400">
+        Lege mit „Neuer Eintrag" los.
+      </p>
     </div>
   )
 }

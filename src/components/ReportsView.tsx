@@ -10,28 +10,23 @@ import {
   XAxis,
 } from 'recharts'
 import type { Transaction } from '../lib/types'
-import {
-  formatEUR,
-  formatMonth,
-  monthKeyOf,
-  shiftMonth,
-} from '../lib/format'
+import { formatEUR, formatMonth, monthKeyOf, shiftMonth } from '../lib/format'
 import { iconFor } from '../lib/categories'
-import MonthNav from './MonthNav'
+import Icon from './Icon'
 
+// Ruhige, abgestufte Palette (kein Neon)
 const PIE_COLORS = [
-  '#ef4444', '#f97316', '#eab308', '#22c55e', '#06b6d4',
-  '#3b82f6', '#8b5cf6', '#ec4899', '#14b8a6', '#f59e0b',
-  '#64748b',
+  '#0f172a', '#334155', '#475569', '#64748b', '#94a3b8',
+  '#0d9488', '#0891b2', '#4f46e5', '#7c3aed', '#be123c',
+  '#b45309',
 ]
 
 interface Props {
   transactions: Transaction[]
   month: string
-  onMonthChange: (m: string) => void
 }
 
-export default function ReportsView({ transactions, month, onMonthChange }: Props) {
+export default function ReportsView({ transactions, month }: Props) {
   const [filterCat, setFilterCat] = useState<string | null>(null)
 
   const monthTx = useMemo(
@@ -39,7 +34,6 @@ export default function ReportsView({ transactions, month, onMonthChange }: Prop
     [transactions, month],
   )
 
-  // Ausgaben nach Kategorie (Tortendiagramm)
   const byCategory = useMemo(() => {
     const map = new Map<string, number>()
     for (const t of monthTx) {
@@ -53,7 +47,6 @@ export default function ReportsView({ transactions, month, onMonthChange }: Prop
 
   const totalExpense = byCategory.reduce((s, c) => s + c.value, 0)
 
-  // Verlauf: letzte 6 Monate (Balken Einnahmen/Ausgaben)
   const trend = useMemo(() => {
     const out: { label: string; einnahme: number; ausgabe: number }[] = []
     for (let i = 5; i >= 0; i--) {
@@ -70,7 +63,6 @@ export default function ReportsView({ transactions, month, onMonthChange }: Prop
     return out
   }, [transactions, month])
 
-  // gefilterte Einträge (nach Kategorie) für die Liste unten
   const filtered = useMemo(() => {
     if (!filterCat) return monthTx
     return monthTx.filter((t) => t.category === filterCat)
@@ -81,175 +73,202 @@ export default function ReportsView({ transactions, month, onMonthChange }: Prop
     [monthTx],
   )
 
+  if (monthTx.length === 0) {
+    return (
+      <div className="flex flex-col items-center rounded-xl border border-dashed border-slate-200 bg-white py-16 text-center">
+        <span className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-slate-400">
+          <Icon name="chart" size={22} />
+        </span>
+        <p className="text-sm font-medium text-slate-600">
+          Keine Daten für diesen Monat
+        </p>
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-5">
-      <MonthNav month={month} onChange={onMonthChange} />
-
-      {monthTx.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-slate-300 py-16 text-center dark:border-slate-700">
-          <p className="text-4xl">📊</p>
-          <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">
-            Keine Daten für diesen Monat.
-          </p>
-        </div>
-      ) : (
-        <>
-          {/* Tortendiagramm Ausgaben */}
-          <section className="rounded-2xl bg-white p-4 shadow-sm dark:bg-slate-800">
-            <h2 className="mb-1 text-sm font-semibold text-slate-800 dark:text-slate-100">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+        {/* Tortendiagramm */}
+        <section className="rounded-xl border border-slate-200 bg-white p-5">
+          <div className="mb-4 flex items-baseline justify-between">
+            <h2 className="text-sm font-semibold text-slate-800">
               Ausgaben nach Kategorie
             </h2>
-            <p className="mb-3 text-xs text-slate-400">
-              Gesamt: {formatEUR(totalExpense)}
+            <span className="text-sm font-medium text-slate-500">
+              {formatEUR(totalExpense)}
+            </span>
+          </div>
+          {byCategory.length === 0 ? (
+            <p className="py-10 text-center text-sm text-slate-400">
+              Keine Ausgaben in diesem Monat.
             </p>
-            {byCategory.length === 0 ? (
-              <p className="py-8 text-center text-sm text-slate-400">
-                Keine Ausgaben in diesem Monat.
-              </p>
-            ) : (
-              <div className="flex flex-col items-center gap-4 sm:flex-row">
-                <div className="h-48 w-48 shrink-0">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={byCategory}
-                        dataKey="value"
-                        nameKey="name"
-                        innerRadius={45}
-                        outerRadius={80}
-                        paddingAngle={2}
-                      >
-                        {byCategory.map((_, i) => (
-                          <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
-                        ))}
-                      </Pie>
-                      <Tooltip
-                        formatter={(v: number) => formatEUR(v)}
-                        contentStyle={{
-                          borderRadius: 12,
-                          border: 'none',
-                          fontSize: 13,
-                        }}
-                      />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-                <ul className="w-full space-y-1.5">
-                  {byCategory.map((c, i) => (
-                    <li key={c.name} className="flex items-center gap-2 text-sm">
-                      <span
-                        className="h-3 w-3 shrink-0 rounded-full"
-                        style={{ background: PIE_COLORS[i % PIE_COLORS.length] }}
-                      />
-                      <span className="flex-1 truncate text-slate-700 dark:text-slate-200">
-                        {iconFor(c.name)} {c.name}
-                      </span>
-                      <span className="font-medium text-slate-800 dark:text-slate-100">
-                        {formatEUR(c.value)}
-                      </span>
-                      <span className="w-10 text-right text-xs text-slate-400">
-                        {totalExpense > 0
-                          ? Math.round((c.value / totalExpense) * 100)
-                          : 0}
-                        %
-                      </span>
-                    </li>
-                  ))}
-                </ul>
+          ) : (
+            <div className="flex flex-col items-center gap-5 sm:flex-row">
+              <div className="h-44 w-44 shrink-0">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={byCategory}
+                      dataKey="value"
+                      nameKey="name"
+                      innerRadius={44}
+                      outerRadius={78}
+                      paddingAngle={2}
+                      stroke="none"
+                    >
+                      {byCategory.map((_, i) => (
+                        <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      formatter={(v: number) => formatEUR(v)}
+                      contentStyle={{
+                        borderRadius: 10,
+                        border: '1px solid #e2e8f0',
+                        fontSize: 13,
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.06)',
+                      }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
               </div>
-            )}
-          </section>
-
-          {/* Verlauf */}
-          <section className="rounded-2xl bg-white p-4 shadow-sm dark:bg-slate-800">
-            <h2 className="mb-3 text-sm font-semibold text-slate-800 dark:text-slate-100">
-              Verlauf (6 Monate)
-            </h2>
-            <div className="h-44 w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={trend} barGap={2}>
-                  <XAxis
-                    dataKey="label"
-                    tickLine={false}
-                    axisLine={false}
-                    tick={{ fontSize: 11, fill: '#94a3b8' }}
-                  />
-                  <Tooltip
-                    formatter={(v: number) => formatEUR(v)}
-                    cursor={{ fill: 'rgba(148,163,184,0.1)' }}
-                    contentStyle={{
-                      borderRadius: 12,
-                      border: 'none',
-                      fontSize: 13,
-                    }}
-                  />
-                  <Bar dataKey="einnahme" name="Einnahmen" fill="#22c55e" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="ausgabe" name="Ausgaben" fill="#ef4444" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
+              <ul className="w-full space-y-2">
+                {byCategory.map((c, i) => (
+                  <li key={c.name} className="flex items-center gap-2.5 text-sm">
+                    <span
+                      className="h-2.5 w-2.5 shrink-0 rounded-full"
+                      style={{ background: PIE_COLORS[i % PIE_COLORS.length] }}
+                    />
+                    <span className="flex-1 truncate text-slate-700">{c.name}</span>
+                    <span className="font-medium tabular-nums text-slate-800">
+                      {formatEUR(c.value)}
+                    </span>
+                    <span className="w-9 text-right text-xs tabular-nums text-slate-400">
+                      {totalExpense > 0
+                        ? Math.round((c.value / totalExpense) * 100)
+                        : 0}
+                      %
+                    </span>
+                  </li>
+                ))}
+              </ul>
             </div>
-          </section>
+          )}
+        </section>
 
-          {/* Filterbare Einträge */}
-          <section>
-            <div className="mb-2 flex flex-wrap gap-2">
-              <button
-                onClick={() => setFilterCat(null)}
-                className={`rounded-full px-3 py-1 text-xs font-medium ${
-                  !filterCat
-                    ? 'bg-emerald-500 text-white'
-                    : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'
+        {/* Verlauf */}
+        <section className="rounded-xl border border-slate-200 bg-white p-5">
+          <h2 className="mb-4 text-sm font-semibold text-slate-800">
+            Verlauf (6 Monate)
+          </h2>
+          <div className="h-44 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={trend} barGap={2}>
+                <XAxis
+                  dataKey="label"
+                  tickLine={false}
+                  axisLine={false}
+                  tick={{ fontSize: 11, fill: '#94a3b8' }}
+                />
+                <Tooltip
+                  formatter={(v: number) => formatEUR(v)}
+                  cursor={{ fill: 'rgba(148,163,184,0.08)' }}
+                  contentStyle={{
+                    borderRadius: 10,
+                    border: '1px solid #e2e8f0',
+                    fontSize: 13,
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.06)',
+                  }}
+                />
+                <Bar dataKey="einnahme" name="Einnahmen" fill="#059669" radius={[3, 3, 0, 0]} />
+                <Bar dataKey="ausgabe" name="Ausgaben" fill="#e11d48" radius={[3, 3, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="mt-3 flex items-center justify-center gap-5 text-xs text-slate-500">
+            <span className="flex items-center gap-1.5">
+              <span className="h-2.5 w-2.5 rounded-full bg-emerald-600" /> Einnahmen
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="h-2.5 w-2.5 rounded-full bg-rose-600" /> Ausgaben
+            </span>
+          </div>
+        </section>
+      </div>
+
+      {/* Filterbare Liste */}
+      <section>
+        <div className="mb-3 flex flex-wrap gap-2">
+          <FilterChip
+            active={!filterCat}
+            onClick={() => setFilterCat(null)}
+            label="Alle"
+          />
+          {allCats.map((c) => (
+            <FilterChip
+              key={c}
+              active={filterCat === c}
+              onClick={() => setFilterCat(c)}
+              label={c}
+              icon={c}
+            />
+          ))}
+        </div>
+        <div className="divide-y divide-slate-100 overflow-hidden rounded-xl border border-slate-200 bg-white">
+          {filtered.map((t) => (
+            <div key={t.id} className="flex items-center gap-3 px-4 py-2.5">
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500">
+                <Icon name={iconFor(t.category)} size={16} />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-sm text-slate-700">
+                  {t.category}
+                </span>
+                {t.note && (
+                  <span className="block truncate text-xs text-slate-400">
+                    {t.note}
+                  </span>
+                )}
+              </span>
+              <span
+                className={`text-sm font-semibold tabular-nums ${
+                  t.kind === 'einnahme' ? 'text-emerald-600' : 'text-slate-900'
                 }`}
               >
-                Alle
-              </button>
-              {allCats.map((c) => (
-                <button
-                  key={c}
-                  onClick={() => setFilterCat(c)}
-                  className={`rounded-full px-3 py-1 text-xs font-medium ${
-                    filterCat === c
-                      ? 'bg-emerald-500 text-white'
-                      : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'
-                  }`}
-                >
-                  {iconFor(c)} {c}
-                </button>
-              ))}
+                {t.kind === 'einnahme' ? '+' : '−'}
+                {formatEUR(t.amount)}
+              </span>
             </div>
-            <div className="overflow-hidden rounded-2xl bg-white shadow-sm dark:bg-slate-800">
-              {filtered.map((t, i) => (
-                <div
-                  key={t.id}
-                  className={`flex items-center gap-3 px-4 py-2.5 ${
-                    i > 0 ? 'border-t border-slate-100 dark:border-slate-700/60' : ''
-                  }`}
-                >
-                  <span className="text-lg">{iconFor(t.category)}</span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm text-slate-700 dark:text-slate-200">
-                      {t.category}
-                    </span>
-                    {t.note && (
-                      <span className="block truncate text-xs text-slate-400">
-                        {t.note}
-                      </span>
-                    )}
-                  </span>
-                  <span
-                    className={`text-sm font-semibold ${
-                      t.kind === 'einnahme' ? 'text-emerald-600' : 'text-slate-700 dark:text-slate-200'
-                    }`}
-                  >
-                    {t.kind === 'einnahme' ? '+' : '−'}
-                    {formatEUR(t.amount)}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </section>
-        </>
-      )}
+          ))}
+        </div>
+      </section>
     </div>
+  )
+}
+
+function FilterChip({
+  active,
+  onClick,
+  label,
+  icon,
+}: {
+  active: boolean
+  onClick: () => void
+  label: string
+  icon?: string
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={`flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition ${
+        active
+          ? 'border-slate-900 bg-slate-900 text-white'
+          : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+      }`}
+    >
+      {icon && <Icon name={iconFor(icon)} size={14} />}
+      {label}
+    </button>
   )
 }

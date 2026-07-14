@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { supabase } from '../lib/supabase'
+import Icon from './Icon'
 
 // Benutzername wird intern auf eine feste "E-Mail" abgebildet – so kannst du
 // dich einfach mit Benutzername + Passwort anmelden.
@@ -44,81 +45,85 @@ export default function Auth() {
   }
 
   return (
-    <div className="flex min-h-full flex-col items-center justify-center px-6 py-12">
-      <div className="mb-8 text-center">
-        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-500 text-3xl shadow-lg">
-          💶
+    <div className="flex min-h-full flex-col items-center justify-center bg-slate-50 px-6 py-12">
+      <div className="w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
+        <div className="mb-7 flex flex-col items-center text-center">
+          <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-slate-900 text-white">
+            <Icon name="wallet" size={26} />
+          </div>
+          <h1 className="text-xl font-semibold tracking-tight text-slate-900">
+            Geld-Tracker
+          </h1>
+          <p className="mt-1 text-sm text-slate-500">
+            Einnahmen &amp; Ausgaben im Griff
+          </p>
         </div>
-        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
-          Geld-Tracker
-        </h1>
-        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-          Einnahmen &amp; Ausgaben – einfach im Griff
-        </p>
-      </div>
 
-      <form onSubmit={submit} className="w-full max-w-sm space-y-4">
-        <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
-            Benutzername
-          </label>
-          <input
-            type="text"
-            required
-            autoFocus
-            autoCapitalize="none"
-            autoCorrect="off"
-            autoComplete="username"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            placeholder="z. B. leon"
-            className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-base text-slate-900 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/30 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
-          />
-        </div>
-        <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
-            Passwort
-          </label>
-          <input
-            type="password"
-            required
-            autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="••••••••"
-            className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-base text-slate-900 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/30 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
-          />
-        </div>
+        <form onSubmit={submit} className="space-y-4">
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-slate-700">
+              Benutzername
+            </label>
+            <input
+              type="text"
+              required
+              autoFocus
+              autoCapitalize="none"
+              autoCorrect="off"
+              autoComplete="username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              placeholder="z. B. flavio"
+              className="w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 text-base text-slate-900 outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10"
+            />
+          </div>
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-slate-700">
+              Passwort
+            </label>
+            <input
+              type="password"
+              required
+              autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••"
+              className="w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 text-base text-slate-900 outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10"
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={busy}
+            className="w-full rounded-lg bg-slate-900 py-2.5 text-base font-medium text-white transition hover:bg-slate-800 active:scale-[0.99] disabled:opacity-60"
+          >
+            {busy
+              ? 'Bitte warten…'
+              : mode === 'login'
+                ? 'Anmelden'
+                : 'Konto anlegen'}
+          </button>
+        </form>
 
         <button
-          type="submit"
-          disabled={busy}
-          className="w-full rounded-xl bg-emerald-500 py-3 text-base font-semibold text-white transition active:scale-[0.98] disabled:opacity-60"
+          type="button"
+          onClick={() => {
+            setMode((m) => (m === 'login' ? 'register' : 'login'))
+            setMsg(null)
+          }}
+          className="mt-4 w-full text-center text-sm font-medium text-slate-500 hover:text-slate-900"
         >
-          {busy
-            ? 'Bitte warten…'
-            : mode === 'login'
-              ? 'Anmelden'
-              : 'Konto anlegen'}
+          {mode === 'login'
+            ? 'Noch kein Konto? Jetzt anlegen'
+            : '← Zurück zum Anmelden'}
         </button>
-      </form>
 
-      <button
-        type="button"
-        onClick={() => {
-          setMode((m) => (m === 'login' ? 'register' : 'login'))
-          setMsg(null)
-        }}
-        className="mt-4 text-sm text-emerald-600 dark:text-emerald-400"
-      >
-        {mode === 'login'
-          ? 'Noch kein Konto? Jetzt anlegen'
-          : '← Zurück zum Anmelden'}
-      </button>
-
-      {msg && (
-        <p className="mt-4 max-w-sm text-center text-sm text-red-500">{msg}</p>
-      )}
+        {msg && (
+          <p className="mt-4 rounded-lg bg-rose-50 px-3 py-2 text-center text-sm text-rose-600">
+            {msg}
+          </p>
+        )}
+      </div>
     </div>
   )
 }

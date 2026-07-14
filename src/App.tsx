@@ -9,6 +9,8 @@ import Auth from './components/Auth'
 import EntriesView from './components/EntriesView'
 import ReportsView from './components/ReportsView'
 import AddEditSheet from './components/AddEditSheet'
+import MonthNav from './components/MonthNav'
+import Icon, { type IconName } from './components/Icon'
 
 type Tab = 'entries' | 'reports'
 
@@ -21,28 +23,19 @@ export default function App() {
       setSession(data.session)
       setReady(true)
     })
-    const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => {
-      setSession(s)
-    })
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => setSession(s))
     return () => sub.subscription.unsubscribe()
   }, [])
 
   if (!ready) {
     return (
-      <div className="flex min-h-full items-center justify-center bg-slate-50 dark:bg-slate-950">
+      <div className="flex min-h-full items-center justify-center bg-slate-50">
         <p className="text-slate-400">Lädt…</p>
       </div>
     )
   }
 
-  if (!session) {
-    return (
-      <div className="min-h-full bg-slate-50 dark:bg-slate-950">
-        <Auth />
-      </div>
-    )
-  }
-
+  if (!session) return <Auth />
   return <Main userId={session.user.id} />
 }
 
@@ -52,7 +45,6 @@ function Main({ userId }: { userId: string }) {
   const [month, setMonth] = useState(currentMonthKey())
   const [editing, setEditing] = useState<Transaction | null>(null)
   const [sheetOpen, setSheetOpen] = useState(false)
-  const [menuOpen, setMenuOpen] = useState(false)
 
   function openNew() {
     setEditing(null)
@@ -62,128 +54,126 @@ function Main({ userId }: { userId: string }) {
     setEditing(t)
     setSheetOpen(true)
   }
-
   async function handleSave(input: TransactionInput) {
     if (editing) await store.updateTransaction(editing.id, input)
     else await store.addTransaction(input)
   }
 
-  return (
-    <div className="mx-auto flex min-h-full max-w-md flex-col bg-slate-50 dark:bg-slate-950">
-      {/* Kopfzeile */}
-      <header
-        className="sticky top-0 z-30 flex items-center justify-between border-b border-slate-200 bg-slate-50/90 px-4 py-3 backdrop-blur dark:border-slate-800 dark:bg-slate-950/90"
-        style={{ paddingTop: 'calc(0.75rem + env(safe-area-inset-top))' }}
-      >
-        <h1 className="text-lg font-bold text-slate-900 dark:text-white">
-          {tab === 'entries' ? 'Einträge' : 'Auswertung'}
-        </h1>
-        <div className="relative">
-          <button
-            onClick={() => setMenuOpen((o) => !o)}
-            className="flex h-9 w-9 items-center justify-center rounded-full text-slate-600 active:bg-slate-200 dark:text-slate-300 dark:active:bg-slate-800"
-            aria-label="Menü"
-          >
-            ⋯
-          </button>
-          {menuOpen && (
-            <>
-              <div
-                className="fixed inset-0 z-40"
-                onClick={() => setMenuOpen(false)}
-              />
-              <div className="absolute right-0 top-11 z-50 w-56 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl dark:border-slate-700 dark:bg-slate-800">
-                <MenuItem
-                  label="Als Excel exportieren"
-                  icon="📊"
-                  onClick={() => {
-                    exportExcel(store.transactions)
-                    setMenuOpen(false)
-                  }}
-                />
-                <MenuItem
-                  label="Backup (JSON) sichern"
-                  icon="💾"
-                  onClick={() => {
-                    exportJSON(store.transactions)
-                    setMenuOpen(false)
-                  }}
-                />
-                <ImportItem
-                  onImported={async (rows) => {
-                    const n = await store.importJSON(rows)
-                    setMenuOpen(false)
-                    alert(`${n} Einträge importiert.`)
-                  }}
-                />
-                <div className="border-t border-slate-100 dark:border-slate-700" />
-                <MenuItem
-                  label="Abmelden"
-                  icon="🚪"
-                  danger
-                  onClick={() => supabase.auth.signOut()}
-                />
-              </div>
-            </>
-          )}
-        </div>
-      </header>
+  const title = tab === 'entries' ? 'Einträge' : 'Auswertung'
 
-      {/* Inhalt */}
-      <main className="flex-1 px-4 py-4 pb-28">
-        {store.error && (
-          <div className="mb-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600 dark:bg-red-950/40">
-            {store.error}
-            {store.error.includes('relation') && (
-              <p className="mt-1 text-xs">
-                Tipp: Bitte zuerst das SQL-Schema in Supabase ausführen (siehe
-                README).
-              </p>
+  return (
+    <div className="flex min-h-full bg-slate-50">
+      {/* Sidebar (Desktop) */}
+      <aside className="hidden w-60 shrink-0 flex-col border-r border-slate-200 bg-white md:flex">
+        <div className="flex items-center gap-2.5 px-5 py-5">
+          <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-900 text-white">
+            <Icon name="wallet" size={19} />
+          </span>
+          <span className="font-semibold tracking-tight text-slate-900">
+            Geld-Tracker
+          </span>
+        </div>
+        <nav className="flex flex-col gap-1 px-3">
+          <NavItem
+            icon="list"
+            label="Einträge"
+            active={tab === 'entries'}
+            onClick={() => setTab('entries')}
+          />
+          <NavItem
+            icon="chart"
+            label="Auswertung"
+            active={tab === 'reports'}
+            onClick={() => setTab('reports')}
+          />
+        </nav>
+        <div className="mt-auto p-3">
+          <button
+            onClick={openNew}
+            className="flex w-full items-center justify-center gap-2 rounded-lg bg-slate-900 py-2.5 text-sm font-medium text-white transition hover:bg-slate-800"
+          >
+            <Icon name="plus" size={17} /> Neuer Eintrag
+          </button>
+        </div>
+      </aside>
+
+      {/* Hauptbereich */}
+      <div className="flex min-w-0 flex-1 flex-col">
+        {/* Kopfzeile */}
+        <header
+          className="sticky top-0 z-30 border-b border-slate-200 bg-white/90 backdrop-blur"
+          style={{ paddingTop: 'env(safe-area-inset-top)' }}
+        >
+          <div className="flex h-14 items-center justify-between gap-3 px-4 md:h-16 md:px-6">
+            <h1 className="text-lg font-semibold tracking-tight text-slate-900">
+              {title}
+            </h1>
+            <div className="flex items-center gap-2 md:gap-3">
+              <div className="hidden sm:block">
+                <MonthNav month={month} onChange={setMonth} />
+              </div>
+              <MoreMenu store={store} />
+            </div>
+          </div>
+          {/* MonthNav mobil (eigene Zeile) */}
+          <div className="flex justify-center border-t border-slate-100 py-2 sm:hidden">
+            <MonthNav month={month} onChange={setMonth} />
+          </div>
+        </header>
+
+        {/* Inhalt */}
+        <main className="flex-1 pb-28 md:pb-8">
+          <div className="mx-auto w-full max-w-5xl px-4 py-5 md:px-6 md:py-6">
+            {store.error && (
+              <div className="mb-4 rounded-lg bg-rose-50 px-4 py-3 text-sm text-rose-600">
+                {store.error}
+                {store.error.includes('relation') && (
+                  <p className="mt-1 text-xs">
+                    Tipp: Bitte zuerst das SQL-Schema in Supabase ausführen (siehe
+                    README).
+                  </p>
+                )}
+              </div>
+            )}
+            {store.loading ? (
+              <p className="py-16 text-center text-slate-400">Lädt Daten…</p>
+            ) : tab === 'entries' ? (
+              <EntriesView
+                transactions={store.transactions}
+                month={month}
+                onEdit={openEdit}
+              />
+            ) : (
+              <ReportsView transactions={store.transactions} month={month} />
             )}
           </div>
-        )}
-        {store.loading ? (
-          <p className="py-16 text-center text-slate-400">Lädt Daten…</p>
-        ) : tab === 'entries' ? (
-          <EntriesView
-            transactions={store.transactions}
-            month={month}
-            onMonthChange={setMonth}
-            onEdit={openEdit}
-          />
-        ) : (
-          <ReportsView
-            transactions={store.transactions}
-            month={month}
-            onMonthChange={setMonth}
-          />
-        )}
-      </main>
+        </main>
+      </div>
 
-      {/* Floating + */}
+      {/* Floating + (nur Handy) */}
       <button
         onClick={openNew}
-        className="fixed bottom-24 left-1/2 z-30 flex h-14 w-14 -translate-x-1/2 items-center justify-center rounded-full bg-emerald-500 text-3xl text-white shadow-xl shadow-emerald-500/30 transition active:scale-95"
+        className="fixed bottom-20 right-5 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-slate-900 text-white shadow-lg transition active:scale-95 md:hidden"
         aria-label="Neuer Eintrag"
       >
-        ＋
+        <Icon name="plus" size={26} />
       </button>
 
-      {/* Tab-Leiste */}
+      {/* Bottom-Tabs (nur Handy) */}
       <nav
-        className="fixed bottom-0 left-1/2 z-20 flex w-full max-w-md -translate-x-1/2 border-t border-slate-200 bg-white/95 backdrop-blur dark:border-slate-800 dark:bg-slate-900/95"
+        className="fixed bottom-0 left-0 right-0 z-20 flex border-t border-slate-200 bg-white md:hidden"
         style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
       >
         <TabButton
           active={tab === 'entries'}
           onClick={() => setTab('entries')}
-          icon="🧾"
+          icon="list"
           label="Einträge"
         />
         <TabButton
           active={tab === 'reports'}
           onClick={() => setTab('reports')}
-          icon="📊"
+          icon="chart"
           label="Auswertung"
         />
       </nav>
@@ -202,6 +192,32 @@ function Main({ userId }: { userId: string }) {
   )
 }
 
+function NavItem({
+  icon,
+  label,
+  active,
+  onClick,
+}: {
+  icon: IconName
+  label: string
+  active: boolean
+  onClick: () => void
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition ${
+        active
+          ? 'bg-slate-100 text-slate-900'
+          : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'
+      }`}
+    >
+      <Icon name={icon} size={18} />
+      {label}
+    </button>
+  )
+}
+
 function TabButton({
   active,
   onClick,
@@ -210,43 +226,93 @@ function TabButton({
 }: {
   active: boolean
   onClick: () => void
-  icon: string
+  icon: IconName
   label: string
 }) {
   return (
     <button
       onClick={onClick}
       className={`flex flex-1 flex-col items-center gap-0.5 py-2.5 text-xs font-medium transition ${
-        active ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400'
+        active ? 'text-slate-900' : 'text-slate-400'
       }`}
     >
-      <span className={`text-xl ${active ? '' : 'opacity-60 grayscale'}`}>
-        {icon}
-      </span>
+      <Icon name={icon} size={22} />
       {label}
     </button>
   )
 }
 
+function MoreMenu({ store }: { store: ReturnType<typeof useStore> }) {
+  const [open, setOpen] = useState(false)
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-600 transition hover:bg-slate-50"
+        aria-label="Menü"
+      >
+        <Icon name="more" size={18} />
+      </button>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+          <div className="absolute right-0 top-11 z-50 w-60 overflow-hidden rounded-xl border border-slate-200 bg-white py-1 shadow-lg">
+            <MenuItem
+              icon="download"
+              label="Als Excel exportieren"
+              onClick={() => {
+                exportExcel(store.transactions)
+                setOpen(false)
+              }}
+            />
+            <MenuItem
+              icon="download"
+              label="Backup (JSON) sichern"
+              onClick={() => {
+                exportJSON(store.transactions)
+                setOpen(false)
+              }}
+            />
+            <ImportItem
+              onImported={async (rows) => {
+                const n = await store.importJSON(rows)
+                setOpen(false)
+                alert(`${n} Einträge importiert.`)
+              }}
+            />
+            <div className="my-1 border-t border-slate-100" />
+            <MenuItem
+              icon="logout"
+              label="Abmelden"
+              danger
+              onClick={() => supabase.auth.signOut()}
+            />
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
+
 function MenuItem({
-  label,
   icon,
+  label,
   onClick,
   danger,
 }: {
+  icon: IconName
   label: string
-  icon: string
   onClick: () => void
   danger?: boolean
 }) {
   return (
     <button
       onClick={onClick}
-      className={`flex w-full items-center gap-3 px-4 py-3 text-left text-sm active:bg-slate-50 dark:active:bg-slate-700/50 ${
-        danger ? 'text-red-600' : 'text-slate-700 dark:text-slate-200'
+      className={`flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm transition hover:bg-slate-50 ${
+        danger ? 'text-rose-600' : 'text-slate-700'
       }`}
     >
-      <span>{icon}</span>
+      <Icon name={icon} size={17} />
       {label}
     </button>
   )
@@ -283,8 +349,8 @@ function ImportItem({
   }
 
   return (
-    <label className="flex w-full cursor-pointer items-center gap-3 px-4 py-3 text-left text-sm text-slate-700 active:bg-slate-50 dark:text-slate-200 dark:active:bg-slate-700/50">
-      <span>📥</span>
+    <label className="flex w-full cursor-pointer items-center gap-3 px-4 py-2.5 text-left text-sm text-slate-700 transition hover:bg-slate-50">
+      <Icon name="upload" size={17} />
       Backup wiederherstellen
       <input
         type="file"
