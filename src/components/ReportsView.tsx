@@ -200,6 +200,21 @@ export default function ReportsView({ transactions, jobs, month }: Props) {
   }, [monthTx])
   const hasVat = vat.vereinnahmt > 0 || vat.gezahlt > 0
 
+  // Umsatz nach Steuersatz (0 % vs. 19 % etc.)
+  const revenueByVat = useMemo(() => {
+    const map = new Map<number, number>()
+    for (const t of monthTx) {
+      if (t.kind !== 'einnahme') continue
+      const rate = t.vat_rate ?? 0
+      map.set(rate, (map.get(rate) ?? 0) + t.amount)
+    }
+    const rows = Array.from(map.entries())
+      .map(([rate, amount]) => ({ rate, amount }))
+      .sort((a, b) => b.amount - a.amount)
+    const total = rows.reduce((s, r) => s + r.amount, 0)
+    return { rows, total }
+  }, [monthTx])
+
   // Auffälligkeit: Einnahmen ohne MwSt, obwohl bei Ausgaben MwSt anfiel
   const einnahmenOhneMwSt = useMemo(
     () => monthTx.filter((t) => t.kind === 'einnahme' && (t.vat_rate ?? 0) === 0),
@@ -330,6 +345,44 @@ export default function ReportsView({ transactions, jobs, month }: Props) {
             </p>
           </div>
         </div>
+      )}
+
+      {revenueByVat.rows.length > 0 && (
+        <section className="rounded-xl border border-slate-200 bg-white p-5">
+          <div className="mb-4 flex items-baseline justify-between">
+            <h2 className="text-sm font-semibold text-slate-800">
+              Umsatz nach Steuersatz
+            </h2>
+            <span className="text-sm font-medium text-slate-500">
+              {formatEUR(revenueByVat.total)}
+            </span>
+          </div>
+          <ul className="space-y-3">
+            {revenueByVat.rows.map((r) => {
+              const pct =
+                revenueByVat.total > 0
+                  ? Math.round((r.amount / revenueByVat.total) * 100)
+                  : 0
+              return (
+                <li key={r.rate}>
+                  <div className="mb-1 flex items-center justify-between text-sm">
+                    <span className="font-medium text-slate-700">{r.rate} % MwSt</span>
+                    <span className="tabular-nums text-slate-600">
+                      {formatEUR(r.amount)}{' '}
+                      <span className="text-slate-400">({pct} %)</span>
+                    </span>
+                  </div>
+                  <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
+                    <div
+                      className="h-full rounded-full bg-slate-900"
+                      style={{ width: `${pct}%` }}
+                    />
+                  </div>
+                </li>
+              )
+            })}
+          </ul>
+        </section>
       )}
 
       {einnahmenOhneMwSt.length > 0 && (
