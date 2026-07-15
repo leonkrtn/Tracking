@@ -284,17 +284,22 @@ export default function AddEditSheet({
                     €
                   </span>
                 </div>
-                <select
-                  value={vatRate}
-                  onChange={(e) => setVatRate(Number(e.target.value))}
-                  className="w-24 shrink-0 rounded-lg border border-slate-300 bg-white px-2 text-base font-medium text-slate-900 outline-none focus:border-slate-900"
-                >
+                <div className="grid shrink-0 grid-cols-2 gap-1 rounded-lg bg-slate-100 p-1">
                   {VAT_RATES.map((r) => (
-                    <option key={r} value={r}>
+                    <button
+                      key={r}
+                      type="button"
+                      onClick={() => setVatRate(r)}
+                      className={`rounded-md px-3 py-1.5 text-sm font-medium transition ${
+                        vatRate === r
+                          ? 'bg-white text-slate-900 shadow-sm'
+                          : 'text-slate-500'
+                      }`}
+                    >
                       {r} %
-                    </option>
+                    </button>
                   ))}
-                </select>
+                </div>
               </div>
 
               <p className="mt-1.5 text-sm text-slate-500">
