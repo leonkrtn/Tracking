@@ -9,9 +9,9 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['icon.svg'],
       manifest: {
-        name: 'Geld-Tracker',
-        short_name: 'Geld',
-        description: 'Einnahmen und Ausgaben einfach tracken',
+        name: 'Meister-Kasse',
+        short_name: 'Meister-Kasse',
+        description: 'Einnahmen und Ausgaben der Werkstatt einfach tracken',
         lang: 'de',
         theme_color: '#ffffff',
         background_color: '#ffffff',

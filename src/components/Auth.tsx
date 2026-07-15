@@ -3,7 +3,9 @@ import { supabase } from '../lib/supabase'
 import Icon from './Icon'
 
 // Benutzername wird intern auf eine feste "E-Mail" abgebildet – so kannst du
-// dich einfach mit Benutzername + Passwort anmelden.
+// dich einfach mit Benutzername + Passwort anmelden. Die Domain ist nur ein
+// interner Platzhalter (nicht sichtbar) – nicht ändern, sonst passt sie nicht
+// mehr zu bereits angelegten Benutzern in Supabase.
 function toEmail(username: string): string {
   return `${username.trim().toLowerCase()}@geldtracker.de`
 }
@@ -49,13 +51,13 @@ export default function Auth() {
       <div className="w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
         <div className="mb-7 flex flex-col items-center text-center">
           <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-slate-900 text-white">
-            <Icon name="wallet" size={26} />
+            <Icon name="wrench" size={24} />
           </div>
           <h1 className="text-xl font-semibold tracking-tight text-slate-900">
-            Geld-Tracker
+            Meister-Kasse
           </h1>
           <p className="mt-1 text-sm text-slate-500">
-            Einnahmen &amp; Ausgaben im Griff
+            Werkstatt-Finanzen im Griff
           </p>
         </div>
 

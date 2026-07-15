@@ -10,8 +10,9 @@ import {
   XAxis,
 } from 'recharts'
 import type { Transaction } from '../lib/types'
-import { formatEUR, formatMonth, monthKeyOf, shiftMonth } from '../lib/format'
+import { formatEUR, formatEURSigned, formatMonth, monthKeyOf, shiftMonth } from '../lib/format'
 import { iconFor } from '../lib/categories'
+import { vatAmount } from '../lib/vat'
 import Icon from './Icon'
 
 // Ruhige, abgestufte Palette (kein Neon)
@@ -73,6 +74,19 @@ export default function ReportsView({ transactions, month }: Props) {
     [monthTx],
   )
 
+  const vat = useMemo(() => {
+    let vereinnahmt = 0
+    let gezahlt = 0
+    for (const t of monthTx) {
+      if (t.vat_rate == null) continue
+      const v = vatAmount(t.amount, t.vat_rate)
+      if (t.kind === 'einnahme') vereinnahmt += v
+      else gezahlt += v
+    }
+    return { vereinnahmt, gezahlt, zahllast: vereinnahmt - gezahlt }
+  }, [monthTx])
+  const hasVat = vat.vereinnahmt > 0 || vat.gezahlt > 0
+
   if (monthTx.length === 0) {
     return (
       <div className="flex flex-col items-center rounded-xl border border-dashed border-slate-200 bg-white py-16 text-center">
@@ -88,6 +102,39 @@ export default function ReportsView({ transactions, month }: Props) {
 
   return (
     <div className="space-y-5">
+      {hasVat && (
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <div className="rounded-xl border border-slate-200 bg-white p-4">
+            <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
+              Vereinnahmte MwSt
+            </p>
+            <p className="mt-1 text-xl font-semibold tabular-nums text-slate-900">
+              {formatEUR(vat.vereinnahmt)}
+            </p>
+          </div>
+          <div className="rounded-xl border border-slate-200 bg-white p-4">
+            <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
+              Gezahlte MwSt
+            </p>
+            <p className="mt-1 text-xl font-semibold tabular-nums text-slate-900">
+              {formatEUR(vat.gezahlt)}
+            </p>
+          </div>
+          <div className="rounded-xl border border-slate-200 bg-white p-4">
+            <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
+              Zahllast (Saldo)
+            </p>
+            <p
+              className={`mt-1 text-xl font-semibold tabular-nums ${
+                vat.zahllast >= 0 ? 'text-slate-900' : 'text-rose-600'
+              }`}
+            >
+              {formatEURSigned(vat.zahllast)}
+            </p>
+          </div>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
         {/* Tortendiagramm */}
         <section className="rounded-xl border border-slate-200 bg-white p-5">

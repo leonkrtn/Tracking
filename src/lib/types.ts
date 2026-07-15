@@ -4,10 +4,11 @@ export interface Transaction {
   id: string
   user_id: string
   kind: Kind
-  amount: number
+  amount: number // Bruttobetrag
   category: string
   date: string // ISO YYYY-MM-DD
   note: string | null
+  vat_rate: number | null // MwSt-Satz in % (z. B. 19), null = ohne MwSt erfasst
   created_at: string
 }
 
@@ -18,6 +19,7 @@ export interface TransactionInput {
   category: string
   date: string
   note: string | null
+  vat_rate: number | null
 }
 
 export interface Category {

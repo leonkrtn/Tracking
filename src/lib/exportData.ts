@@ -1,6 +1,7 @@
 import * as XLSX from 'xlsx'
 import type { Transaction } from './types'
 import { formatDate } from './format'
+import { nettoFromBrutto, vatAmount } from './vat'
 
 function download(blob: Blob, filename: string) {
   const url = URL.createObjectURL(blob)
@@ -18,22 +19,27 @@ export function exportExcel(transactions: Transaction[]) {
   const rows = transactions
     .slice()
     .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0))
-    .map((t) => ({
-      Datum: formatDate(t.date),
-      Typ: t.kind === 'einnahme' ? 'Einnahme' : 'Ausgabe',
-      Kategorie: t.category,
-      // Ausgaben negativ, damit Summen in Excel direkt stimmen
-      'Betrag (€)': t.kind === 'ausgabe' ? -t.amount : t.amount,
-      Notiz: t.note ?? '',
-    }))
+    .map((t) => {
+      const brutto = t.kind === 'ausgabe' ? -t.amount : t.amount
+      const hasVat = t.vat_rate != null
+      return {
+        Datum: formatDate(t.date),
+        Typ: t.kind === 'einnahme' ? 'Einnahme' : 'Ausgabe',
+        Kategorie: t.category,
+        'Netto (€)': hasVat
+          ? (t.kind === 'ausgabe' ? -1 : 1) * nettoFromBrutto(t.amount, t.vat_rate!)
+          : '',
+        'MwSt-Satz': hasVat ? `${t.vat_rate}%` : '',
+        'MwSt (€)': hasVat ? (t.kind === 'ausgabe' ? -1 : 1) * vatAmount(t.amount, t.vat_rate!) : '',
+        'Brutto (€)': brutto,
+        Notiz: t.note ?? '',
+      }
+    })
 
   const ws = XLSX.utils.json_to_sheet(rows)
   ws['!cols'] = [
-    { wch: 12 },
-    { wch: 11 },
-    { wch: 22 },
-    { wch: 12 },
-    { wch: 30 },
+    { wch: 12 }, { wch: 11 }, { wch: 24 }, { wch: 12 },
+    { wch: 10 }, { wch: 11 }, { wch: 12 }, { wch: 30 },
   ]
 
   const wb = XLSX.utils.book_new()
@@ -45,14 +51,14 @@ export function exportExcel(transactions: Transaction[]) {
     new Blob([out], {
       type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     }),
-    `Geld-Tracker_${stamp}.xlsx`,
+    `Meister-Kasse_${stamp}.xlsx`,
   )
 }
 
 /** Vollständiges JSON-Backup (zum Sichern / Wiederherstellen). */
 export function exportJSON(transactions: Transaction[]) {
   const payload = {
-    app: 'geld-tracker',
+    app: 'meister-kasse',
     version: 1,
     exportedAt: new Date().toISOString(),
     transactions: transactions.map(({ user_id, ...rest }) => {
@@ -63,6 +69,6 @@ export function exportJSON(transactions: Transaction[]) {
   const stamp = new Date().toISOString().slice(0, 10)
   download(
     new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' }),
-    `Geld-Tracker_Backup_${stamp}.json`,
+    `Meister-Kasse_Backup_${stamp}.json`,
   )
 }

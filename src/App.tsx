@@ -59,7 +59,7 @@ function Main({ userId }: { userId: string }) {
     else await store.addTransaction(input)
   }
 
-  const title = tab === 'entries' ? 'Einträge' : 'Auswertung'
+  const title = tab === 'entries' ? 'Buchungen' : 'Auswertung'
 
   return (
     <div className="flex min-h-full bg-slate-50">
@@ -67,16 +67,16 @@ function Main({ userId }: { userId: string }) {
       <aside className="hidden w-60 shrink-0 flex-col border-r border-slate-200 bg-white md:flex">
         <div className="flex items-center gap-2.5 px-5 py-5">
           <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-900 text-white">
-            <Icon name="wallet" size={19} />
+            <Icon name="wrench" size={17} />
           </span>
           <span className="font-semibold tracking-tight text-slate-900">
-            Geld-Tracker
+            Meister-Kasse
           </span>
         </div>
         <nav className="flex flex-col gap-1 px-3">
           <NavItem
             icon="list"
-            label="Einträge"
+            label="Buchungen"
             active={tab === 'entries'}
             onClick={() => setTab('entries')}
           />
@@ -92,7 +92,7 @@ function Main({ userId }: { userId: string }) {
             onClick={openNew}
             className="flex w-full items-center justify-center gap-2 rounded-lg bg-slate-900 py-2.5 text-sm font-medium text-white transition hover:bg-slate-800"
           >
-            <Icon name="plus" size={17} /> Neuer Eintrag
+            <Icon name="plus" size={17} /> Neue Buchung
           </button>
         </div>
       </aside>
@@ -154,7 +154,7 @@ function Main({ userId }: { userId: string }) {
       <button
         onClick={openNew}
         className="fixed bottom-20 right-5 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-slate-900 text-white shadow-lg transition active:scale-95 md:hidden"
-        aria-label="Neuer Eintrag"
+        aria-label="Neue Buchung"
       >
         <Icon name="plus" size={26} />
       </button>
@@ -168,7 +168,7 @@ function Main({ userId }: { userId: string }) {
           active={tab === 'entries'}
           onClick={() => setTab('entries')}
           icon="list"
-          label="Einträge"
+          label="Buchungen"
         />
         <TabButton
           active={tab === 'reports'}
@@ -277,7 +277,7 @@ function MoreMenu({ store }: { store: ReturnType<typeof useStore> }) {
               onImported={async (rows) => {
                 const n = await store.importJSON(rows)
                 setOpen(false)
-                alert(`${n} Einträge importiert.`)
+                alert(`${n} Buchungen importiert.`)
               }}
             />
             <div className="my-1 border-t border-slate-100" />
@@ -338,6 +338,7 @@ function ImportItem({
           category: String(t.category ?? 'Sonstiges'),
           date: String(t.date),
           note: t.note != null ? String(t.note) : null,
+          vat_rate: t.vat_rate != null ? Number(t.vat_rate) : null,
         }))
         onImported(rows)
       } catch {

@@ -1,43 +1,52 @@
-# 💶 Geld-Tracker
+# 🔧 Meister-Kasse
 
-Eine einfache Handy-App (PWA), um **Einnahmen und Ausgaben** zu erfassen und
-auszuwerten. Gebaut mit React + TypeScript + Vite + Tailwind, Daten in **Supabase**.
+Einfache Buchhaltungs-App (PWA) für die **Werkstatt** – Einnahmen und
+Ausgaben erfassen und auswerten. Gebaut mit React + TypeScript + Vite +
+Tailwind, Daten in **Supabase**.
 
 ## Funktionen
 
-- **Einträge** erfassen, bearbeiten und löschen (Betrag, Typ, Kategorie, Datum, Notiz)
-- **Auswertung**: Saldo des Monats, Tortendiagramm (Ausgaben nach Kategorie),
-  6-Monats-Verlauf, filterbare Liste
+- **Buchungen** erfassen, bearbeiten und löschen (Betrag, Typ, Kategorie,
+  Datum, Notiz)
+- **MwSt togglebar**: pro Buchung Netto-Betrag + Satz (19 % / 7 % / 0 %)
+  eingeben, Brutto wird automatisch berechnet
+- Kategorien für den Werkstattbetrieb (Arbeitslohn, Ersatzteile, Reifen,
+  TÜV/AU, Werkzeug, Miete, Löhne, Versicherung, Kfz/Fuhrpark, …) – eigene
+  Kategorien zusätzlich anlegbar
+- **Auswertung**: Saldo des Monats, Ausgaben nach Kategorie (Diagramm),
+  6-Monats-Verlauf, MwSt-Übersicht (vereinnahmt / gezahlt / Zahllast),
+  filterbare Liste
 - Monatsweise blättern
-- Eigene Kategorien anlegen (zusätzlich zu den Standard-Kategorien)
 - **Login mit Benutzername + Passwort** (ein Benutzer genügt)
-- **Excel-Export** (`.xlsx`) + JSON-Backup/-Wiederherstellung
-- Hell-/Dunkel-Modus (folgt dem Handy-Setting), untere Tab-Leiste, schwebender „＋"
+- **Excel-Export** (`.xlsx`, inkl. Netto/MwSt/Brutto) + JSON-Backup/-Wiederherstellung
+- Helles, cleanes Design, eigenes Icon-Set (keine Emojis)
+- **Desktop-Ansicht** mit Seitenleiste + **Handy-Ansicht** mit Bottom-Tabs
 - **PWA**: auf dem Homescreen installierbar
 
 ---
 
-## Einrichtung (einmalig, ca. 2 Minuten)
+## Einrichtung (einmalig)
 
 Das Supabase-Projekt **„Tracking"** ist bereits im Code hinterlegt
-(`src/lib/supabase.ts`). Es sind nur zwei Schritte im Supabase-Dashboard nötig:
+(`src/lib/supabase.ts`).
 
-### 1. Datenbank-Tabellen anlegen
+### Neuinstallation (Tabellen existieren noch nicht)
 
-1. Supabase öffnen → Projekt **Tracking** → **SQL Editor** → **New query**
-2. Den kompletten Inhalt von [`supabase/schema.sql`](supabase/schema.sql) einfügen
-3. **Run** klicken
+1. Supabase → Projekt **Tracking** → **SQL Editor** → **New query**
+2. Inhalt von [`supabase/schema.sql`](supabase/schema.sql) einfügen → **Run**
+3. **Authentication** → **Sign In / Providers** → **Email** → **„Confirm
+   email"** ausschalten → **Save**
 
-### 2. Passwort-Login ohne E-Mail-Bestätigung erlauben
+### Bestehende Installation (Tabellen sind schon da)
 
-Da wir mit Benutzername statt echter E-Mail arbeiten, muss die
-E-Mail-Bestätigung aus sein:
+Nur die MwSt-Spalte nachrüsten – im SQL Editor:
 
-1. Supabase → **Authentication** → **Sign In / Providers** → **Email**
-2. **„Confirm email"** ausschalten → **Save**
+```sql
+alter table public.transactions
+  add column if not exists vat_rate numeric(5, 2);
+```
 
-> Ohne diesen Schritt kann das Konto zwar angelegt, aber nicht sofort
-> eingeloggt werden.
+(steht auch in [`supabase/002_add_vat_rate.sql`](supabase/002_add_vat_rate.sql))
 
 ---
 
@@ -48,8 +57,7 @@ npm install
 npm run dev
 ```
 
-Dann im Browser (am besten Handy-Ansicht) öffnen, beim ersten Mal
-**„Noch kein Konto? Jetzt anlegen"** → Benutzername + Passwort festlegen. Fertig.
+Login: Benutzername + Passwort des angelegten Kontos.
 
 ## Build (für Deployment)
 
@@ -58,12 +66,12 @@ npm run build     # erzeugt den Ordner dist/
 npm run preview   # lokale Vorschau des Builds
 ```
 
-Die App ist eine statische Seite und kann z. B. auf **Vercel** oder
-**Netlify** deployt werden (Build-Command `npm run build`, Output `dist`).
+Statische Seite, z. B. auf **Vercel** oder **Netlify** deploybar
+(Build-Command `npm run build`, Output `dist`).
 
 ### Eigenes Supabase-Projekt verwenden (optional)
 
-Lege eine Datei `.env.local` an:
+`.env.local` anlegen:
 
 ```
 VITE_SUPABASE_URL=https://DEIN-PROJEKT.supabase.co
@@ -74,5 +82,4 @@ VITE_SUPABASE_ANON_KEY=dein_publishable_key
 
 ## Auf dem Handy installieren
 
-Nach dem Deployment die Seite im Handy-Browser öffnen →
-Teilen-Menü → **„Zum Home-Bildschirm"**. Dann startet sie wie eine echte App.
+Seite im Handy-Browser öffnen → Teilen-Menü → **„Zum Home-Bildschirm"**.

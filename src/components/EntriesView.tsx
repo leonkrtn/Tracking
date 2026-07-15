@@ -133,10 +133,10 @@ function EmptyState() {
         <Icon name="list" size={22} />
       </span>
       <p className="text-sm font-medium text-slate-600">
-        Noch keine Einträge in diesem Monat
+        Noch keine Buchungen in diesem Monat
       </p>
       <p className="mt-1 text-sm text-slate-400">
-        Lege mit „Neuer Eintrag" los.
+        Lege mit „Neue Buchung" los.
       </p>
     </div>
   )

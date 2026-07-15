@@ -1,7 +1,12 @@
 -- ============================================================
---  Geld-Tracker – Datenbank-Schema
+--  Meister-Kasse – Datenbank-Schema
 --  Einmalig im Supabase SQL-Editor ausführen:
 --  Projekt "Tracking" → SQL Editor → New query → einfügen → Run
+--
+--  Hinweis: Läuft die App schon (Tabellen existieren bereits)?
+--  Dann reicht die kleine Migration in
+--  supabase/002_add_vat_rate.sql – dieses Skript hier ist für
+--  eine komplette Neuinstallation gedacht.
 -- ============================================================
 
 -- ---------- Tabelle: Buchungen ----------
@@ -13,6 +18,7 @@ create table if not exists public.transactions (
   category   text not null,
   date       date not null default current_date,
   note       text,
+  vat_rate   numeric(5, 2), -- MwSt-Satz in % (z. B. 19.00), NULL = ohne MwSt erfasst
   created_at timestamptz not null default now()
 );
 
