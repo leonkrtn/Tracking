@@ -163,12 +163,15 @@ export default function AddEditSheet({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/30 backdrop-blur-sm sm:items-center sm:p-4"
+      className="fixed inset-0 z-50 flex items-end justify-center overflow-x-hidden bg-slate-900/30 backdrop-blur-sm sm:items-center sm:p-4"
       onClick={onClose}
     >
       <div
-        className="max-h-[92vh] w-full max-w-lg overflow-y-auto rounded-t-2xl border border-slate-200 bg-white px-5 pt-3 shadow-2xl sm:rounded-2xl sm:pt-5"
-        style={{ paddingBottom: 'calc(1.5rem + env(safe-area-inset-bottom))' }}
+        className="max-h-[92vh] w-full max-w-lg overflow-x-hidden overflow-y-auto rounded-t-2xl border border-slate-200 bg-white px-5 pt-3 shadow-2xl sm:rounded-2xl sm:pt-5"
+        style={{
+          paddingBottom: 'calc(1.5rem + env(safe-area-inset-bottom))',
+          touchAction: 'pan-y',
+        }}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mx-auto mb-4 h-1 w-9 rounded-full bg-slate-200 sm:hidden" />
@@ -337,28 +340,35 @@ export default function AddEditSheet({
               <label className="mb-1.5 block text-sm font-medium text-slate-600">
                 Kategorie
               </label>
-              <div className="flex flex-wrap gap-2">
-                {catList.map((c) => (
-                  <button
-                    key={c}
-                    onClick={() => setCategory(c)}
-                    className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-sm transition ${
-                      category === c
-                        ? 'border-slate-900 bg-slate-900 text-white'
-                        : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
-                    }`}
-                  >
-                    <Icon name={iconFor(c)} size={15} />
-                    {c}
-                  </button>
-                ))}
-                <button
-                  onClick={() => setShowNewCat((s) => !s)}
-                  className="flex items-center gap-1 rounded-lg border border-dashed border-slate-300 px-2.5 py-1.5 text-sm text-slate-500 transition hover:bg-slate-50"
+              <div className="relative">
+                <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">
+                  <Icon name={category ? iconFor(category) : 'package'} size={17} />
+                </span>
+                <select
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value)}
+                  className="w-full appearance-none rounded-lg border border-slate-300 bg-white py-2.5 pl-10 pr-9 text-base text-slate-900 outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10"
                 >
-                  <Icon name="plus" size={15} /> Neu
-                </button>
+                  <option value="" disabled>
+                    Kategorie wählen
+                  </option>
+                  {catList.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+                <span className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400">
+                  <Icon name="chevron-right" className="rotate-90" size={16} />
+                </span>
               </div>
+              <button
+                type="button"
+                onClick={() => setShowNewCat((s) => !s)}
+                className="mt-2 flex items-center gap-1 text-sm font-medium text-slate-500 hover:text-slate-900"
+              >
+                <Icon name="plus" size={14} /> Neue Kategorie
+              </button>
               {showNewCat && (
                 <div className="mt-2 flex gap-2">
                   <input
