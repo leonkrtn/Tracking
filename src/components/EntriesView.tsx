@@ -1,16 +1,24 @@
 import { useMemo } from 'react'
-import type { Transaction } from '../lib/types'
+import type { Job, Transaction } from '../lib/types'
 import { formatDate, formatEUR, formatEURSigned, monthKeyOf } from '../lib/format'
 import { iconFor } from '../lib/categories'
 import Icon from './Icon'
 
 interface Props {
   transactions: Transaction[]
+  jobs: Job[]
   month: string
   onEdit: (t: Transaction) => void
+  onOpenJob: (job: Job) => void
 }
 
-export default function EntriesView({ transactions, month, onEdit }: Props) {
+export default function EntriesView({
+  transactions,
+  jobs,
+  month,
+  onEdit,
+  onOpenJob,
+}: Props) {
   const monthTx = useMemo(
     () => transactions.filter((t) => monthKeyOf(t.date) === month),
     [transactions, month],
@@ -27,15 +35,35 @@ export default function EntriesView({ transactions, month, onEdit }: Props) {
   }, [monthTx])
   const balance = income - expense
 
+  // Eigenständige Buchungen (ohne Auftrag) – Aufträge werden separat als Karten gezeigt
+  const standaloneTx = useMemo(
+    () => monthTx.filter((t) => !t.job_id),
+    [monthTx],
+  )
+
   const groups = useMemo(() => {
     const map = new Map<string, Transaction[]>()
-    for (const t of monthTx) {
+    for (const t of standaloneTx) {
       const arr = map.get(t.date) ?? []
       arr.push(t)
       map.set(t.date, arr)
     }
     return Array.from(map.entries())
-  }, [monthTx])
+  }, [standaloneTx])
+
+  const jobProfits = useMemo(() => {
+    const map = new Map<string, { income: number; expense: number }>()
+    for (const t of transactions) {
+      if (!t.job_id) continue
+      const entry = map.get(t.job_id) ?? { income: 0, expense: 0 }
+      if (t.kind === 'einnahme') entry.income += t.amount
+      else entry.expense += t.amount
+      map.set(t.job_id, entry)
+    }
+    return map
+  }, [transactions])
+
+  const hasAnything = jobs.length > 0 || standaloneTx.length > 0
 
   return (
     <div className="space-y-5">
@@ -71,11 +99,56 @@ export default function EntriesView({ transactions, month, onEdit }: Props) {
         </div>
       </div>
 
-      {/* Liste */}
-      {monthTx.length === 0 ? (
+      {!hasAnything ? (
         <EmptyState />
       ) : (
         <div className="space-y-5">
+          {/* Aufträge */}
+          {jobs.length > 0 && (
+            <div>
+              <p className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-400">
+                Aufträge
+              </p>
+              <div className="divide-y divide-slate-100 overflow-hidden rounded-xl border border-slate-200 bg-white">
+                {jobs.map((job) => {
+                  const p = jobProfits.get(job.id) ?? { income: 0, expense: 0 }
+                  const profit = p.income - p.expense
+                  return (
+                    <button
+                      key={job.id}
+                      onClick={() => onOpenJob(job)}
+                      className="flex w-full items-center gap-3 px-4 py-3 text-left transition hover:bg-slate-50"
+                    >
+                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-600">
+                        <Icon name="folder" size={18} />
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-sm font-medium text-slate-800">
+                          {job.name}
+                        </span>
+                        {job.note && (
+                          <span className="block truncate text-xs text-slate-400">
+                            {job.note}
+                          </span>
+                        )}
+                      </span>
+                      <span
+                        className={`shrink-0 text-sm font-semibold tabular-nums ${
+                          profit >= 0 ? 'text-slate-900' : 'text-rose-600'
+                        }`}
+                      >
+                        {p.income === 0 && p.expense === 0
+                          ? '—'
+                          : formatEURSigned(profit)}
+                      </span>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Eigenständige Buchungen */}
           {groups.map(([date, items]) => (
             <div key={date}>
               <p className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-400">
@@ -130,13 +203,13 @@ function EmptyState() {
   return (
     <div className="flex flex-col items-center rounded-xl border border-dashed border-slate-200 bg-white py-16 text-center">
       <span className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-slate-400">
-        <Icon name="list" size={22} />
+        <Icon name="folder" size={22} />
       </span>
       <p className="text-sm font-medium text-slate-600">
-        Noch keine Buchungen in diesem Monat
+        Noch keine Aufträge oder Buchungen in diesem Monat
       </p>
       <p className="mt-1 text-sm text-slate-400">
-        Lege mit „Neue Buchung" los.
+        Lege mit „＋" einen neuen Auftrag an.
       </p>
     </div>
   )

@@ -3,12 +3,13 @@ import type { Session } from '@supabase/supabase-js'
 import { supabase } from './lib/supabase'
 import { useStore } from './lib/useStore'
 import { currentMonthKey } from './lib/format'
-import type { Transaction, TransactionInput } from './lib/types'
+import type { Job, JobInput, Transaction, TransactionInput } from './lib/types'
 import { exportExcel, exportJSON } from './lib/exportData'
 import Auth from './components/Auth'
 import EntriesView from './components/EntriesView'
 import ReportsView from './components/ReportsView'
 import AddEditSheet from './components/AddEditSheet'
+import JobSheet from './components/JobSheet'
 import MonthNav from './components/MonthNav'
 import Icon, { type IconName } from './components/Icon'
 
@@ -43,21 +44,42 @@ function Main({ userId }: { userId: string }) {
   const store = useStore(userId)
   const [tab, setTab] = useState<Tab>('entries')
   const [month, setMonth] = useState(currentMonthKey())
+
   const [editing, setEditing] = useState<Transaction | null>(null)
+  // undefined = frisch, Auftrag/Einzelbuchung togglebar; string/null = fester Kontext
+  const [sheetJobId, setSheetJobId] = useState<string | null | undefined>(undefined)
   const [sheetOpen, setSheetOpen] = useState(false)
+
+  const [activeJob, setActiveJob] = useState<Job | null>(null)
 
   function openNew() {
     setEditing(null)
+    setSheetJobId(undefined)
     setSheetOpen(true)
   }
   function openEdit(t: Transaction) {
     setEditing(t)
+    setSheetJobId(t.job_id)
     setSheetOpen(true)
   }
-  async function handleSave(input: TransactionInput) {
+  function openAddEntryToJob(jobId: string) {
+    setEditing(null)
+    setSheetJobId(jobId)
+    setSheetOpen(true)
+  }
+
+  async function handleSaveTransaction(input: TransactionInput) {
     if (editing) await store.updateTransaction(editing.id, input)
     else await store.addTransaction(input)
   }
+  async function handleSaveJob(input: JobInput) {
+    await store.addJob(input)
+  }
+
+  // aktiven Auftrag nach Reload aktualisieren, damit Betrag/Liste live bleiben
+  const liveActiveJob = activeJob
+    ? store.jobs.find((j) => j.id === activeJob.id) ?? null
+    : null
 
   const title = tab === 'entries' ? 'Buchungen' : 'Auswertung'
 
@@ -92,7 +114,7 @@ function Main({ userId }: { userId: string }) {
             onClick={openNew}
             className="flex w-full items-center justify-center gap-2 rounded-lg bg-slate-900 py-2.5 text-sm font-medium text-white transition hover:bg-slate-800"
           >
-            <Icon name="plus" size={17} /> Neue Buchung
+            <Icon name="plus" size={17} /> Neu
           </button>
         </div>
       </aside>
@@ -140,8 +162,10 @@ function Main({ userId }: { userId: string }) {
             ) : tab === 'entries' ? (
               <EntriesView
                 transactions={store.transactions}
+                jobs={store.jobs}
                 month={month}
                 onEdit={openEdit}
+                onOpenJob={setActiveJob}
               />
             ) : (
               <ReportsView transactions={store.transactions} month={month} />
@@ -154,7 +178,7 @@ function Main({ userId }: { userId: string }) {
       <button
         onClick={openNew}
         className="fixed bottom-20 right-5 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-slate-900 text-white shadow-lg transition active:scale-95 md:hidden"
-        aria-label="Neue Buchung"
+        aria-label="Neu"
       >
         <Icon name="plus" size={26} />
       </button>
@@ -178,12 +202,29 @@ function Main({ userId }: { userId: string }) {
         />
       </nav>
 
+      {liveActiveJob && (
+        <JobSheet
+          job={liveActiveJob}
+          transactions={store.transactions.filter((t) => t.job_id === liveActiveJob.id)}
+          onClose={() => setActiveJob(null)}
+          onAddEntry={() => openAddEntryToJob(liveActiveJob.id)}
+          onEditEntry={openEdit}
+          onRename={store.updateJob}
+          onDelete={async (id) => {
+            await store.deleteJob(id)
+            setActiveJob(null)
+          }}
+        />
+      )}
+
       {sheetOpen && (
         <AddEditSheet
           existing={editing}
+          jobId={sheetJobId}
           categories={store.categories}
           onClose={() => setSheetOpen(false)}
-          onSave={handleSave}
+          onSaveTransaction={handleSaveTransaction}
+          onSaveJob={handleSaveJob}
           onDelete={store.deleteTransaction}
           onAddCategory={store.addCategory}
         />
@@ -339,6 +380,7 @@ function ImportItem({
           date: String(t.date),
           note: t.note != null ? String(t.note) : null,
           vat_rate: t.vat_rate != null ? Number(t.vat_rate) : null,
+          job_id: null,
         }))
         onImported(rows)
       } catch {

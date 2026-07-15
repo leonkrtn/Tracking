@@ -187,7 +187,7 @@ export default function ReportsView({ transactions, month }: Props) {
                       className="h-2.5 w-2.5 shrink-0 rounded-full"
                       style={{ background: PIE_COLORS[i % PIE_COLORS.length] }}
                     />
-                    <span className="flex-1 truncate text-slate-700">{c.name}</span>
+                    <span className="min-w-0 flex-1 truncate text-slate-700">{c.name}</span>
                     <span className="font-medium tabular-nums text-slate-800">
                       {formatEUR(c.value)}
                     </span>

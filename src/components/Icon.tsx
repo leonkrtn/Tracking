@@ -13,6 +13,7 @@ type IconName =
   | 'chevron-right'
   | 'more'
   | 'wrench'
+  | 'folder'
   // Kategorien – Einnahmen
   | 'banknote'
   | 'tag'
@@ -71,6 +72,9 @@ const ICONS: Record<IconName, Elem[]> = {
     {
       p: 'M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.4-3.4a6 6 0 0 1-7.9 7.9l-6.6 6.6a2.1 2.1 0 0 1-3-3l6.6-6.6a6 6 0 0 1 7.9-7.9l-3.4 3.4Z',
     },
+  ],
+  folder: [
+    { p: 'M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z' },
   ],
 
   // Einnahmen

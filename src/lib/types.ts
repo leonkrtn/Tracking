@@ -9,6 +9,7 @@ export interface Transaction {
   date: string // ISO YYYY-MM-DD
   note: string | null
   vat_rate: number | null // MwSt-Satz in % (z. B. 19), null = ohne MwSt erfasst
+  job_id: string | null // Auftrag, dem diese Buchung zugeordnet ist (optional)
   created_at: string
 }
 
@@ -20,10 +21,24 @@ export interface TransactionInput {
   date: string
   note: string | null
   vat_rate: number | null
+  job_id: string | null
 }
 
 export interface Category {
   id: string
   name: string
   kind: Kind
+}
+
+export interface Job {
+  id: string
+  user_id: string
+  name: string
+  note: string | null
+  created_at: string
+}
+
+export interface JobInput {
+  name: string
+  note: string | null
 }

@@ -4,10 +4,25 @@
 --  Projekt "Tracking" → SQL Editor → New query → einfügen → Run
 --
 --  Hinweis: Läuft die App schon (Tabellen existieren bereits)?
---  Dann reicht die kleine Migration in
---  supabase/002_add_vat_rate.sql – dieses Skript hier ist für
---  eine komplette Neuinstallation gedacht.
+--  Dann reichen die kleinen Migrationen in
+--  supabase/002_add_vat_rate.sql und supabase/003_add_jobs.sql –
+--  dieses Skript hier ist für eine komplette Neuinstallation gedacht.
 -- ============================================================
+
+-- ---------- Tabelle: Aufträge ----------
+create table if not exists public.jobs (
+  id         uuid primary key default gen_random_uuid(),
+  user_id    uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  name       text not null,
+  note       text,
+  created_at timestamptz not null default now()
+);
+
+alter table public.jobs enable row level security;
+
+drop policy if exists "own jobs – all" on public.jobs;
+create policy "own jobs – all" on public.jobs
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
 -- ---------- Tabelle: Buchungen ----------
 create table if not exists public.transactions (
@@ -19,11 +34,14 @@ create table if not exists public.transactions (
   date       date not null default current_date,
   note       text,
   vat_rate   numeric(5, 2), -- MwSt-Satz in % (z. B. 19.00), NULL = ohne MwSt erfasst
+  job_id     uuid references public.jobs (id) on delete cascade, -- NULL = eigenständige Buchung
   created_at timestamptz not null default now()
 );
 
 create index if not exists transactions_user_date_idx
   on public.transactions (user_id, date desc);
+create index if not exists transactions_job_idx
+  on public.transactions (job_id);
 
 alter table public.transactions enable row level security;
 
