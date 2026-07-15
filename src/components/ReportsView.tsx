@@ -110,6 +110,17 @@ export default function ReportsView({ transactions, month }: Props) {
   }, [monthTx])
   const hasVat = vat.vereinnahmt > 0 || vat.gezahlt > 0
 
+  // Auffälligkeit: Einnahmen ohne MwSt, obwohl bei Ausgaben MwSt anfiel
+  const einnahmenOhneMwSt = useMemo(
+    () => monthTx.filter((t) => t.kind === 'einnahme' && (t.vat_rate ?? 0) === 0),
+    [monthTx],
+  )
+  const hatAusgabenMitMwSt = useMemo(
+    () => monthTx.some((t) => t.kind === 'ausgabe' && (t.vat_rate ?? 0) > 0),
+    [monthTx],
+  )
+  const summeOhneMwSt = einnahmenOhneMwSt.reduce((s, t) => s + t.amount, 0)
+
   if (monthTx.length === 0) {
     return (
       <div className="flex flex-col items-center rounded-xl border border-dashed border-slate-200 bg-white py-16 text-center">
@@ -198,6 +209,54 @@ export default function ReportsView({ transactions, month }: Props) {
             >
               {formatEURSigned(vat.zahllast)}
             </p>
+          </div>
+        </div>
+      )}
+
+      {einnahmenOhneMwSt.length > 0 && (
+        <div
+          className={`rounded-xl border p-4 ${
+            hatAusgabenMitMwSt
+              ? 'border-amber-200 bg-amber-50'
+              : 'border-slate-200 bg-white'
+          }`}
+        >
+          <div className="mb-2 flex items-baseline justify-between">
+            <p
+              className={`text-xs font-medium uppercase tracking-wide ${
+                hatAusgabenMitMwSt ? 'text-amber-700' : 'text-slate-400'
+              }`}
+            >
+              Einnahmen ohne MwSt
+            </p>
+            <p
+              className={`text-sm font-semibold tabular-nums ${
+                hatAusgabenMitMwSt ? 'text-amber-700' : 'text-slate-700'
+              }`}
+            >
+              {formatEUR(summeOhneMwSt)}
+            </p>
+          </div>
+          {hatAusgabenMitMwSt && (
+            <p className="mb-3 text-xs text-amber-600">
+              Bei Ausgaben wurde diesen Monat MwSt gezahlt, bei diesen
+              Einnahmen nicht – bitte prüfen, ob das so gewollt ist.
+            </p>
+          )}
+          <div className="divide-y divide-slate-100 overflow-hidden rounded-lg border border-slate-100 bg-white">
+            {einnahmenOhneMwSt.map((t) => (
+              <div key={t.id} className="flex items-center gap-3 px-3 py-2">
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500">
+                  <Icon name={iconFor(t.category)} size={14} />
+                </span>
+                <span className="min-w-0 flex-1 truncate text-sm text-slate-700">
+                  {t.category}
+                </span>
+                <span className="text-sm font-medium tabular-nums text-slate-800">
+                  {formatEUR(t.amount)}
+                </span>
+              </div>
+            ))}
           </div>
         </div>
       )}
