@@ -19,6 +19,7 @@ type IconName =
   | 'check'
   | 'rotate'
   | 'clock'
+  | 'filter'
   // Kategorien – Einnahmen
   | 'banknote'
   | 'tag'
@@ -90,6 +91,7 @@ const ICONS: Record<IconName, Elem[]> = {
   ],
   check: [{ p: 'M20 6 9 17l-5-5' }],
   clock: [{ c: [12, 12, 10] }, { p: 'M12 6v6l4 2' }],
+  filter: [{ p: 'M22 3H2l8 9.46V19l4 2v-8.54L22 3Z' }],
   rotate: [
     { p: 'M3 12a9 9 0 0 1 15-6.7L21 8' },
     { p: 'M21 3v5h-5' },

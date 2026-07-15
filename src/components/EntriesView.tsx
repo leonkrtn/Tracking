@@ -52,14 +52,18 @@ export default function EntriesView({
   }, [standaloneTx])
 
   const [jobSearch, setJobSearch] = useState('')
+  const [jobStatus, setJobStatus] = useState<'all' | 'open' | 'done'>('all')
+  const [statusMenuOpen, setStatusMenuOpen] = useState(false)
 
   const filteredJobs = useMemo(() => {
     const q = jobSearch.trim().toLowerCase()
-    if (!q) return jobs
-    return jobs.filter(
-      (j) => j.name.toLowerCase().includes(q) || j.note?.toLowerCase().includes(q),
-    )
-  }, [jobs, jobSearch])
+    return jobs.filter((j) => {
+      if (jobStatus === 'open' && j.end_date) return false
+      if (jobStatus === 'done' && !j.end_date) return false
+      if (!q) return true
+      return j.name.toLowerCase().includes(q) || j.note?.toLowerCase().includes(q)
+    })
+  }, [jobs, jobSearch, jobStatus])
 
   const jobProfits = useMemo(() => {
     const map = new Map<string, { income: number; expense: number }>()
@@ -124,17 +128,67 @@ export default function EntriesView({
                   {filteredJobs.length} von {jobs.length}
                 </p>
               </div>
-              <div className="relative mb-2">
-                <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
-                  <Icon name="search" size={16} />
-                </span>
-                <input
-                  type="text"
-                  value={jobSearch}
-                  onChange={(e) => setJobSearch(e.target.value)}
-                  placeholder="Auftrag suchen …"
-                  className="w-full rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm text-slate-900 outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10"
-                />
+              <div className="mb-2 flex items-center gap-2">
+                <div className="relative min-w-0 flex-1">
+                  <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+                    <Icon name="search" size={16} />
+                  </span>
+                  <input
+                    type="text"
+                    value={jobSearch}
+                    onChange={(e) => setJobSearch(e.target.value)}
+                    placeholder="Auftrag suchen …"
+                    className="w-full rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm text-slate-900 outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10"
+                  />
+                </div>
+                <div className="relative shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setStatusMenuOpen((o) => !o)}
+                    aria-label="Aufträge filtern"
+                    className={`flex h-[38px] w-[38px] items-center justify-center rounded-lg border transition ${
+                      jobStatus !== 'all'
+                        ? 'border-slate-900 bg-slate-900 text-white'
+                        : 'border-slate-200 bg-white text-slate-500 hover:bg-slate-50'
+                    }`}
+                  >
+                    <Icon name="filter" size={16} />
+                  </button>
+                  {statusMenuOpen && (
+                    <>
+                      <div
+                        className="fixed inset-0 z-40"
+                        onClick={() => setStatusMenuOpen(false)}
+                      />
+                      <div className="absolute right-0 top-11 z-50 w-40 overflow-hidden rounded-xl border border-slate-200 bg-white py-1 shadow-lg">
+                        <StatusMenuItem
+                          label="Alle"
+                          active={jobStatus === 'all'}
+                          onClick={() => {
+                            setJobStatus('all')
+                            setStatusMenuOpen(false)
+                          }}
+                        />
+                        <StatusMenuItem
+                          label="Offen"
+                          active={jobStatus === 'open'}
+                          onClick={() => {
+                            setJobStatus('open')
+                            setStatusMenuOpen(false)
+                          }}
+                        />
+                        <StatusMenuItem
+                          label="Abgeschlossen"
+                          active={jobStatus === 'done'}
+                          onClick={() => {
+                            setJobStatus('done')
+                            setStatusMenuOpen(false)
+                          }}
+                        />
+                      </div>
+                    </>
+                  )}
+                </div>
               </div>
               {filteredJobs.length === 0 ? (
                 <p className="rounded-xl border border-dashed border-slate-200 bg-white py-6 text-center text-sm text-slate-400">
@@ -229,6 +283,29 @@ export default function EntriesView({
         </div>
       )}
     </div>
+  )
+}
+
+function StatusMenuItem({
+  label,
+  active,
+  onClick,
+}: {
+  label: string
+  active: boolean
+  onClick: () => void
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`flex w-full items-center justify-between px-4 py-2 text-left text-sm transition hover:bg-slate-50 ${
+        active ? 'font-medium text-slate-900' : 'text-slate-600'
+      }`}
+    >
+      {label}
+      {active && <Icon name="check" size={14} />}
+    </button>
   )
 }
 
