@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import type { Job, Transaction } from '../lib/types'
 import { formatDate, formatEUR, formatEURSigned, monthKeyOf } from '../lib/format'
 import { iconFor } from '../lib/categories'
@@ -50,6 +50,16 @@ export default function EntriesView({
     }
     return Array.from(map.entries())
   }, [standaloneTx])
+
+  const [jobSearch, setJobSearch] = useState('')
+
+  const filteredJobs = useMemo(() => {
+    const q = jobSearch.trim().toLowerCase()
+    if (!q) return jobs
+    return jobs.filter(
+      (j) => j.name.toLowerCase().includes(q) || j.note?.toLowerCase().includes(q),
+    )
+  }, [jobs, jobSearch])
 
   const jobProfits = useMemo(() => {
     const map = new Map<string, { income: number; expense: number }>()
@@ -106,45 +116,68 @@ export default function EntriesView({
           {/* Aufträge */}
           {jobs.length > 0 && (
             <div>
-              <p className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-400">
-                Aufträge
-              </p>
-              <div className="divide-y divide-slate-100 overflow-hidden rounded-xl border border-slate-200 bg-white">
-                {jobs.map((job) => {
-                  const p = jobProfits.get(job.id) ?? { income: 0, expense: 0 }
-                  const profit = p.income - p.expense
-                  return (
-                    <button
-                      key={job.id}
-                      onClick={() => onOpenJob(job)}
-                      className="flex w-full items-center gap-3 px-4 py-3 text-left transition hover:bg-slate-50"
-                    >
-                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-600">
-                        <Icon name="folder" size={18} />
-                      </span>
-                      <span className="min-w-0 flex-1">
-                        <span className="block truncate text-sm font-medium text-slate-800">
-                          {job.name}
-                        </span>
-                        {job.note && (
-                          <span className="block truncate text-xs text-slate-400">
-                            {job.note}
-                          </span>
-                        )}
-                      </span>
-                      <span
-                        className={`shrink-0 text-sm font-semibold tabular-nums ${
-                          profit >= 0 ? 'text-slate-900' : 'text-rose-600'
-                        }`}
-                      >
-                        {p.income === 0 && p.expense === 0
-                          ? '—'
-                          : formatEURSigned(profit)}
-                      </span>
-                    </button>
-                  )
-                })}
+              <div className="mb-2 flex items-center justify-between">
+                <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
+                  Aufträge
+                </p>
+                <p className="text-xs text-slate-400">
+                  {filteredJobs.length} von {jobs.length}
+                </p>
               </div>
+              <div className="relative mb-2">
+                <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+                  <Icon name="search" size={16} />
+                </span>
+                <input
+                  type="text"
+                  value={jobSearch}
+                  onChange={(e) => setJobSearch(e.target.value)}
+                  placeholder="Auftrag suchen …"
+                  className="w-full rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm text-slate-900 outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10"
+                />
+              </div>
+              {filteredJobs.length === 0 ? (
+                <p className="rounded-xl border border-dashed border-slate-200 bg-white py-6 text-center text-sm text-slate-400">
+                  Kein Auftrag gefunden.
+                </p>
+              ) : (
+                <div className="divide-y divide-slate-100 overflow-hidden rounded-xl border border-slate-200 bg-white">
+                  {filteredJobs.map((job) => {
+                    const p = jobProfits.get(job.id) ?? { income: 0, expense: 0 }
+                    const profit = p.income - p.expense
+                    return (
+                      <button
+                        key={job.id}
+                        onClick={() => onOpenJob(job)}
+                        className="flex w-full items-center gap-3 px-4 py-3 text-left transition hover:bg-slate-50"
+                      >
+                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-600">
+                          <Icon name="folder" size={18} />
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate text-sm font-medium text-slate-800">
+                            {job.name}
+                          </span>
+                          {job.note && (
+                            <span className="block truncate text-xs text-slate-400">
+                              {job.note}
+                            </span>
+                          )}
+                        </span>
+                        <span
+                          className={`shrink-0 text-sm font-semibold tabular-nums ${
+                            profit >= 0 ? 'text-slate-900' : 'text-rose-600'
+                          }`}
+                        >
+                          {p.income === 0 && p.expense === 0
+                            ? '—'
+                            : formatEURSigned(profit)}
+                        </span>
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
             </div>
           )}
 

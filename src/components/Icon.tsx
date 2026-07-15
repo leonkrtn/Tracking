@@ -15,6 +15,7 @@ type IconName =
   | 'wrench'
   | 'folder'
   | 'pencil'
+  | 'search'
   // Kategorien – Einnahmen
   | 'banknote'
   | 'tag'
@@ -79,6 +80,10 @@ const ICONS: Record<IconName, Elem[]> = {
   ],
   pencil: [
     { p: 'M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z' },
+  ],
+  search: [
+    { c: [11, 11, 8] },
+    { p: 'M21 21l-4.3-4.3' },
   ],
 
   // Einnahmen

@@ -238,29 +238,31 @@ export default function JobSheet({
             </div>
 
             {/* Stat-Kacheln */}
-            <div className="mb-5 grid grid-cols-3 gap-3">
-              <div className="rounded-xl border border-slate-200 bg-white p-3">
-                <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
-                  Einnahmen
-                </p>
-                <p className="mt-1 text-lg font-semibold tabular-nums text-emerald-600">
-                  {formatEUR(income)}
-                </p>
-              </div>
-              <div className="rounded-xl border border-slate-200 bg-white p-3">
-                <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
-                  Ausgaben
-                </p>
-                <p className="mt-1 text-lg font-semibold tabular-nums text-rose-600">
-                  {formatEUR(expense)}
-                </p>
+            <div className="mb-5 space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="min-w-0 rounded-xl border border-slate-200 bg-white p-3">
+                  <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
+                    Einnahmen
+                  </p>
+                  <p className="mt-1 truncate text-lg font-semibold tabular-nums text-emerald-600">
+                    {formatEUR(income)}
+                  </p>
+                </div>
+                <div className="min-w-0 rounded-xl border border-slate-200 bg-white p-3">
+                  <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
+                    Ausgaben
+                  </p>
+                  <p className="mt-1 truncate text-lg font-semibold tabular-nums text-rose-600">
+                    {formatEUR(expense)}
+                  </p>
+                </div>
               </div>
               <div className="rounded-xl border border-slate-200 bg-white p-3">
                 <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
                   Gewinn
                 </p>
                 <p
-                  className={`mt-1 text-lg font-semibold tabular-nums ${
+                  className={`mt-1 text-2xl font-semibold tabular-nums ${
                     profit >= 0 ? 'text-slate-900' : 'text-rose-600'
                   }`}
                 >
