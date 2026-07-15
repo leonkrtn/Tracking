@@ -187,6 +187,29 @@ export default function ReportsView({ transactions, jobs, month }: Props) {
   }, [transactions, jobs])
 
 
+  // Aufträge nach MwSt-Satz ihrer Einnahmen (über alle Zeit)
+  const jobsByRate = useMemo(() => {
+    const sums = new Map<string, { rate19: number; rate0: number }>()
+    for (const t of transactions) {
+      if (!t.job_id || t.kind !== 'einnahme') continue
+      const entry = sums.get(t.job_id) ?? { rate19: 0, rate0: 0 }
+      if ((t.vat_rate ?? 0) >= 19) entry.rate19 += t.amount
+      else entry.rate0 += t.amount
+      sums.set(t.job_id, entry)
+    }
+    const rate19: { job: Job; amount: number }[] = []
+    const rate0: { job: Job; amount: number }[] = []
+    for (const j of jobs) {
+      const s = sums.get(j.id)
+      if (!s) continue
+      if (s.rate19 > 0) rate19.push({ job: j, amount: s.rate19 })
+      if (s.rate0 > 0) rate0.push({ job: j, amount: s.rate0 })
+    }
+    rate19.sort((a, b) => b.amount - a.amount)
+    rate0.sort((a, b) => b.amount - a.amount)
+    return { rate19, rate0 }
+  }, [transactions, jobs])
+
   const vat = useMemo(() => {
     let vereinnahmt = 0
     let gezahlt = 0
@@ -610,6 +633,13 @@ export default function ReportsView({ transactions, jobs, month }: Props) {
         </div>
       )}
 
+      {(jobsByRate.rate19.length > 0 || jobsByRate.rate0.length > 0) && (
+        <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+          <JobVatTable title="Aufträge mit 19 % MwSt" rows={jobsByRate.rate19} />
+          <JobVatTable title="Aufträge mit 0 % MwSt" rows={jobsByRate.rate0} />
+        </div>
+      )}
+
       {/* Filterbare Liste */}
       <section>
         <div className="mb-3 flex flex-wrap gap-2">
@@ -680,6 +710,48 @@ function DeltaBadge({
     >
       {up ? '▲' : '▼'} {Math.round(Math.abs(value))} %
     </p>
+  )
+}
+
+function JobVatTable({
+  title,
+  rows,
+}: {
+  title: string
+  rows: { job: Job; amount: number }[]
+}) {
+  const total = rows.reduce((s, r) => s + r.amount, 0)
+  return (
+    <section className="rounded-xl border border-slate-200 bg-white p-5">
+      <div className="mb-4 flex items-baseline justify-between">
+        <h2 className="text-sm font-semibold text-slate-800">{title}</h2>
+        <span className="text-sm font-medium text-slate-500">{formatEUR(total)}</span>
+      </div>
+      {rows.length === 0 ? (
+        <p className="py-6 text-center text-sm text-slate-400">Keine Aufträge.</p>
+      ) : (
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="text-left text-xs text-slate-400">
+              <th className="pb-2 font-medium">Auftrag</th>
+              <th className="pb-2 text-right font-medium">Umsatz</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100">
+            {rows.map((r) => (
+              <tr key={r.job.id}>
+                <td className="min-w-0 max-w-0 truncate py-2 pr-3 text-slate-700">
+                  {r.job.name}
+                </td>
+                <td className="py-2 text-right font-medium tabular-nums text-slate-900">
+                  {formatEUR(r.amount)}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </section>
   )
 }
 
