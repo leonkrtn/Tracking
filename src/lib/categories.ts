@@ -53,4 +53,4 @@ export function iconFor(category: string): IconName {
   return CATEGORY_ICON[category] ?? 'package'
 }
 
-export const VAT_RATES = [0, 7, 19] as const
+export const VAT_RATES = [0, 19] as const
