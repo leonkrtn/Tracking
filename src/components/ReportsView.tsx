@@ -9,7 +9,7 @@ import {
   Tooltip,
   XAxis,
 } from 'recharts'
-import type { Transaction } from '../lib/types'
+import type { Job, Transaction } from '../lib/types'
 import { formatEUR, formatEURSigned, formatMonth, monthKeyOf, shiftMonth } from '../lib/format'
 import { iconFor } from '../lib/categories'
 import { vatAmount } from '../lib/vat'
@@ -24,10 +24,11 @@ const PIE_COLORS = [
 
 interface Props {
   transactions: Transaction[]
+  jobs: Job[]
   month: string
 }
 
-export default function ReportsView({ transactions, month }: Props) {
+export default function ReportsView({ transactions, jobs, month }: Props) {
   const [filterCat, setFilterCat] = useState<string | null>(null)
 
   const monthTx = useMemo(
@@ -91,11 +92,84 @@ export default function ReportsView({ transactions, month }: Props) {
       }
     }
     return {
+      income,
+      expense,
       profit: income - expense,
       cashflow: cashIn - cashOut,
       offeneForderungen,
     }
   }, [monthTx])
+
+  // Vormonatsvergleich
+  const prevMonthKey = shiftMonth(month, -1)
+  const compare = useMemo(() => {
+    let prevIncome = 0
+    let prevExpense = 0
+    for (const t of transactions) {
+      if (monthKeyOf(t.date) !== prevMonthKey) continue
+      if (t.kind === 'einnahme') prevIncome += t.amount
+      else prevExpense += t.amount
+    }
+    const prevProfit = prevIncome - prevExpense
+    const pct = (cur: number, prev: number): number | null => {
+      if (prev === 0) return null
+      return ((cur - prev) / Math.abs(prev)) * 100
+    }
+    return {
+      hasPrevData: prevIncome > 0 || prevExpense > 0,
+      incomeDelta: pct(money.income, prevIncome),
+      expenseDelta: pct(money.expense, prevExpense),
+      profitDelta: pct(money.profit, prevProfit),
+    }
+  }, [transactions, prevMonthKey, money.income, money.expense, money.profit])
+
+  // Auftrags-Kennzahlen (über alle Zeit, nicht nur den gewählten Monat)
+  const jobStats = useMemo(() => {
+    const byJob = new Map<string, { income: number; expense: number }>()
+    for (const t of transactions) {
+      if (!t.job_id) continue
+      const entry = byJob.get(t.job_id) ?? { income: 0, expense: 0 }
+      if (t.kind === 'einnahme') entry.income += t.amount
+      else entry.expense += t.amount
+      byJob.set(t.job_id, entry)
+    }
+
+    const ranking = jobs
+      .map((j) => {
+        const v = byJob.get(j.id) ?? { income: 0, expense: 0 }
+        return { job: j, income: v.income, profit: v.income - v.expense }
+      })
+      .filter((r) => r.income > 0 || r.profit !== 0)
+      .sort((a, b) => b.profit - a.profit)
+
+    const finished = jobs.filter((j) => j.end_date)
+    let finishedIncome = 0
+    let finishedProfit = 0
+    let totalDays = 0
+    let daysCount = 0
+    for (const j of finished) {
+      const v = byJob.get(j.id) ?? { income: 0, expense: 0 }
+      finishedIncome += v.income
+      finishedProfit += v.income - v.expense
+      const days = Math.round(
+        (new Date(j.end_date!).getTime() - new Date(j.start_date).getTime()) /
+          (1000 * 60 * 60 * 24),
+      )
+      if (days >= 0) {
+        totalDays += days
+        daysCount++
+      }
+    }
+
+    return {
+      ranking,
+      avgValue: finished.length > 0 ? finishedIncome / finished.length : null,
+      avgMargin: finishedIncome > 0 ? (finishedProfit / finishedIncome) * 100 : null,
+      avgDuration: daysCount > 0 ? totalDays / daysCount : null,
+      finishedCount: finished.length,
+    }
+  }, [transactions, jobs])
+
 
   const vat = useMemo(() => {
     let vereinnahmt = 0
@@ -109,6 +183,13 @@ export default function ReportsView({ transactions, month }: Props) {
     return { vereinnahmt, gezahlt, zahllast: vereinnahmt - gezahlt }
   }, [monthTx])
   const hasVat = vat.vereinnahmt > 0 || vat.gezahlt > 0
+
+  // Steuerrücklage-Empfehlung: fällige MwSt + Richtwert 25 % vom Gewinn (Richtwert, keine Steuerberatung)
+  const ruecklage = useMemo(() => {
+    const vatPart = Math.max(0, vat.zahllast)
+    const profitPart = Math.max(0, money.profit) * 0.25
+    return { vatPart, profitPart, total: vatPart + profitPart }
+  }, [vat.zahllast, money.profit])
 
   // Auffälligkeit: Einnahmen ohne MwSt, obwohl bei Ausgaben MwSt anfiel
   const einnahmenOhneMwSt = useMemo(
@@ -180,6 +261,28 @@ export default function ReportsView({ transactions, month }: Props) {
         )}
       </div>
 
+      {compare.hasPrevData && (
+        <div>
+          <p className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-400">
+            Vormonatsvergleich
+          </p>
+          <div className="grid grid-cols-3 gap-3">
+            <div className="rounded-xl border border-slate-200 bg-white p-3 text-center">
+              <p className="text-xs text-slate-400">Einnahmen</p>
+              <DeltaBadge value={compare.incomeDelta} />
+            </div>
+            <div className="rounded-xl border border-slate-200 bg-white p-3 text-center">
+              <p className="text-xs text-slate-400">Ausgaben</p>
+              <DeltaBadge value={compare.expenseDelta} goodIsUp={false} />
+            </div>
+            <div className="rounded-xl border border-slate-200 bg-white p-3 text-center">
+              <p className="text-xs text-slate-400">Gewinn</p>
+              <DeltaBadge value={compare.profitDelta} />
+            </div>
+          </div>
+        </div>
+      )}
+
       {hasVat && (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           <div className="rounded-xl border border-slate-200 bg-white p-4">
@@ -210,6 +313,22 @@ export default function ReportsView({ transactions, month }: Props) {
               {formatEURSigned(vat.zahllast)}
             </p>
           </div>
+        </div>
+      )}
+
+      {ruecklage.total > 0 && (
+        <div className="rounded-xl border border-slate-200 bg-white p-4">
+          <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
+            Empfohlene Rücklage
+          </p>
+          <p className="mt-1 text-xl font-semibold tabular-nums text-slate-900">
+            {formatEUR(ruecklage.total)}
+          </p>
+          <p className="mt-0.5 text-xs text-slate-400">
+            Fällige MwSt ({formatEUR(ruecklage.vatPart)}) + Richtwert 25 % vom
+            Gewinn für Steuern/Abgaben ({formatEUR(ruecklage.profitPart)}).
+            Ersetzt keine Steuerberatung.
+          </p>
         </div>
       )}
 
@@ -370,6 +489,74 @@ export default function ReportsView({ transactions, month }: Props) {
         </section>
       </div>
 
+      {jobStats.ranking.length > 0 && (
+        <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+          {/* Auftrags-Kennzahlen */}
+          <section className="rounded-xl border border-slate-200 bg-white p-5">
+            <h2 className="mb-4 text-sm font-semibold text-slate-800">
+              Auftrags-Kennzahlen
+            </h2>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="min-w-0 rounded-xl border border-slate-200 p-3">
+                <p className="text-xs text-slate-400">Ø Auftragswert</p>
+                <p className="mt-1 truncate text-lg font-semibold tabular-nums text-slate-900">
+                  {jobStats.avgValue != null ? formatEUR(jobStats.avgValue) : '–'}
+                </p>
+              </div>
+              <div className="min-w-0 rounded-xl border border-slate-200 p-3">
+                <p className="text-xs text-slate-400">Ø Marge</p>
+                <p className="mt-1 truncate text-lg font-semibold tabular-nums text-slate-900">
+                  {jobStats.avgMargin != null
+                    ? `${jobStats.avgMargin.toFixed(0)} %`
+                    : '–'}
+                </p>
+              </div>
+            </div>
+            <div className="mt-3 rounded-xl border border-slate-200 p-3">
+              <p className="text-xs text-slate-400">Ø Auftragsdurchlaufzeit</p>
+              <p className="mt-1 text-lg font-semibold tabular-nums text-slate-900">
+                {jobStats.avgDuration != null
+                  ? `${jobStats.avgDuration.toFixed(0)} Tage`
+                  : '–'}
+              </p>
+            </div>
+            <p className="mt-3 text-xs text-slate-400">
+              Basiert auf {jobStats.finishedCount} abgeschlossenen{' '}
+              {jobStats.finishedCount === 1 ? 'Auftrag' : 'Aufträgen'}.
+            </p>
+          </section>
+
+          {/* Top-Aufträge nach Gewinn */}
+          <section className="rounded-xl border border-slate-200 bg-white p-5">
+            <h2 className="mb-4 text-sm font-semibold text-slate-800">
+              Top-Aufträge nach Gewinn
+            </h2>
+            <ul className="space-y-1">
+              {jobStats.ranking.slice(0, 5).map((r) => (
+                <li
+                  key={r.job.id}
+                  className="flex items-center gap-3 rounded-lg px-2 py-2"
+                >
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500">
+                    <Icon name="folder" size={14} />
+                  </span>
+                  <span className="min-w-0 flex-1 truncate text-sm text-slate-700">
+                    {r.job.name}
+                  </span>
+                  <span
+                    className={`shrink-0 text-sm font-semibold tabular-nums ${
+                      r.profit >= 0 ? 'text-slate-900' : 'text-rose-600'
+                    }`}
+                  >
+                    {formatEURSigned(r.profit)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        </div>
+      )}
+
       {/* Filterbare Liste */}
       <section>
         <div className="mb-3 flex flex-wrap gap-2">
@@ -417,6 +604,29 @@ export default function ReportsView({ transactions, month }: Props) {
         </div>
       </section>
     </div>
+  )
+}
+
+function DeltaBadge({
+  value,
+  goodIsUp = true,
+}: {
+  value: number | null
+  goodIsUp?: boolean
+}) {
+  if (value === null) {
+    return <p className="mt-1 text-sm font-medium text-slate-400">neu</p>
+  }
+  const up = value >= 0
+  const good = goodIsUp ? up : !up
+  return (
+    <p
+      className={`mt-1 text-sm font-semibold tabular-nums ${
+        good ? 'text-emerald-600' : 'text-rose-600'
+      }`}
+    >
+      {up ? '▲' : '▼'} {Math.round(Math.abs(value))} %
+    </p>
   )
 }
 

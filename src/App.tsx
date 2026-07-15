@@ -168,7 +168,11 @@ function Main({ userId }: { userId: string }) {
                 onOpenJob={setActiveJob}
               />
             ) : (
-              <ReportsView transactions={store.transactions} month={month} />
+              <ReportsView
+                transactions={store.transactions}
+                jobs={store.jobs}
+                month={month}
+              />
             )}
           </div>
         </main>
