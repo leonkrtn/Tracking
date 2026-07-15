@@ -8,8 +8,8 @@ Tailwind, Daten in **Supabase**.
 
 - **Buchungen** erfassen, bearbeiten und löschen (Betrag, Typ, Kategorie,
   Datum, Notiz)
-- **MwSt togglebar**: pro Buchung Netto-Betrag + Satz (19 % / 7 % / 0 %)
-  eingeben, Brutto wird automatisch berechnet
+- **MwSt**: pro Buchung Netto-Betrag + Satz (0 % / 7 % / 19 %) eingeben,
+  Brutto wird automatisch berechnet
 - Kategorien für den Werkstattbetrieb (Arbeitslohn, Ersatzteile, Reifen,
   TÜV/AU, Werkzeug, Miete, Löhne, Versicherung, Kfz/Fuhrpark, …) – eigene
   Kategorien zusätzlich anlegbar
@@ -18,7 +18,7 @@ Tailwind, Daten in **Supabase**.
   filterbare Liste
 - Monatsweise blättern
 - **Login mit Benutzername + Passwort** (ein Benutzer genügt)
-- **Excel-Export** (`.xlsx`, inkl. Netto/MwSt/Brutto) + JSON-Backup/-Wiederherstellung
+- **Export** als Excel (`.xlsx`) oder CSV, jeweils inkl. Netto/MwSt/Brutto
 - Helles, cleanes Design, eigenes Icon-Set (keine Emojis)
 - **Desktop-Ansicht** mit Seitenleiste + **Handy-Ansicht** mit Bottom-Tabs
 - **PWA**: auf dem Homescreen installierbar

@@ -1,5 +1,5 @@
 import * as XLSX from 'xlsx'
-import type { Transaction } from './types'
+import type { Kind, Transaction } from './types'
 import { formatDate } from './format'
 import { nettoFromBrutto, vatAmount } from './vat'
 
@@ -14,27 +14,53 @@ function download(blob: Blob, filename: string) {
   URL.revokeObjectURL(url)
 }
 
-/** Exportiert alle Buchungen als Excel-Datei (.xlsx). */
-export function exportExcel(transactions: Transaction[]) {
-  const rows = transactions
+interface Row {
+  Datum: string
+  Typ: string
+  Kategorie: string
+  Netto: number
+  MwStSatz: string
+  MwSt: number
+  Brutto: number
+  Notiz: string
+}
+
+function typLabel(kind: Kind): string {
+  return kind === 'einnahme' ? 'Einnahme' : 'Ausgabe'
+}
+
+function buildRows(transactions: Transaction[]): Row[] {
+  return transactions
     .slice()
     .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0))
     .map((t) => {
-      const brutto = t.kind === 'ausgabe' ? -t.amount : t.amount
-      const hasVat = t.vat_rate != null
+      const sign = t.kind === 'ausgabe' ? -1 : 1
+      const rate = t.vat_rate ?? 0
       return {
         Datum: formatDate(t.date),
-        Typ: t.kind === 'einnahme' ? 'Einnahme' : 'Ausgabe',
+        Typ: typLabel(t.kind),
         Kategorie: t.category,
-        'Netto (€)': hasVat
-          ? (t.kind === 'ausgabe' ? -1 : 1) * nettoFromBrutto(t.amount, t.vat_rate!)
-          : '',
-        'MwSt-Satz': hasVat ? `${t.vat_rate}%` : '',
-        'MwSt (€)': hasVat ? (t.kind === 'ausgabe' ? -1 : 1) * vatAmount(t.amount, t.vat_rate!) : '',
-        'Brutto (€)': brutto,
+        Netto: sign * nettoFromBrutto(t.amount, rate),
+        MwStSatz: `${rate}%`,
+        MwSt: sign * vatAmount(t.amount, rate),
+        Brutto: sign * t.amount,
         Notiz: t.note ?? '',
       }
     })
+}
+
+/** Exportiert alle Buchungen als Excel-Datei (.xlsx). */
+export function exportExcel(transactions: Transaction[]) {
+  const rows = buildRows(transactions).map((r) => ({
+    Datum: r.Datum,
+    Typ: r.Typ,
+    Kategorie: r.Kategorie,
+    'Netto (€)': r.Netto,
+    'MwSt-Satz': r.MwStSatz,
+    'MwSt (€)': r.MwSt,
+    'Brutto (€)': r.Brutto,
+    Notiz: r.Notiz,
+  }))
 
   const ws = XLSX.utils.json_to_sheet(rows)
   ws['!cols'] = [
@@ -55,20 +81,35 @@ export function exportExcel(transactions: Transaction[]) {
   )
 }
 
-/** Vollständiges JSON-Backup (zum Sichern / Wiederherstellen). */
-export function exportJSON(transactions: Transaction[]) {
-  const payload = {
-    app: 'meister-kasse',
-    version: 1,
-    exportedAt: new Date().toISOString(),
-    transactions: transactions.map(({ user_id, ...rest }) => {
-      void user_id
-      return rest
-    }),
-  }
+/** Exportiert alle Buchungen als CSV-Datei (Semikolon-getrennt, für Excel/DE). */
+export function exportCSV(transactions: Transaction[]) {
+  const rows = buildRows(transactions)
+  const headers = [
+    'Datum', 'Typ', 'Kategorie', 'Netto (€)', 'MwSt-Satz', 'MwSt (€)', 'Brutto (€)', 'Notiz',
+  ]
+  const numFmt = (n: number) => n.toFixed(2).replace('.', ',')
+  const esc = (v: string) => (/[;"\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v)
+
+  const lines = [
+    headers.join(';'),
+    ...rows.map((r) =>
+      [
+        esc(r.Datum),
+        esc(r.Typ),
+        esc(r.Kategorie),
+        numFmt(r.Netto),
+        esc(r.MwStSatz),
+        numFmt(r.MwSt),
+        numFmt(r.Brutto),
+        esc(r.Notiz),
+      ].join(';'),
+    ),
+  ]
+
   const stamp = new Date().toISOString().slice(0, 10)
   download(
-    new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' }),
-    `Meister-Kasse_Backup_${stamp}.json`,
+    // BOM voranstellen, damit Umlaute in Excel korrekt dargestellt werden
+    new Blob(['\uFEFF' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' }),
+    `Meister-Kasse_${stamp}.csv`,
   )
 }

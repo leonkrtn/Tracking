@@ -14,7 +14,6 @@ export interface Store {
   updateTransaction: (id: string, input: TransactionInput) => Promise<void>
   deleteTransaction: (id: string) => Promise<void>
   addCategory: (name: string, kind: Category['kind']) => Promise<void>
-  importJSON: (rows: TransactionInput[]) => Promise<number>
   addJob: (input: JobInput) => Promise<void>
   updateJob: (id: string, input: JobInput) => Promise<void>
   deleteJob: (id: string) => Promise<void>
@@ -95,17 +94,6 @@ export function useStore(userId: string | null): Store {
     [reload],
   )
 
-  const importJSON = useCallback(
-    async (rows: TransactionInput[]) => {
-      if (rows.length === 0) return 0
-      const { error } = await supabase.from('transactions').insert(rows)
-      if (error) throw new Error(friendlyError(error.message))
-      await reload()
-      return rows.length
-    },
-    [reload],
-  )
-
   const addJob = useCallback(async (input: JobInput) => {
     const { error } = await supabase.from('jobs').insert(input)
     if (error) throw new Error(friendlyError(error.message))
@@ -139,7 +127,6 @@ export function useStore(userId: string | null): Store {
     updateTransaction,
     deleteTransaction,
     addCategory,
-    importJSON,
     addJob,
     updateJob,
     deleteJob,

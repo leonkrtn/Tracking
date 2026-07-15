@@ -4,7 +4,7 @@ import { supabase } from './lib/supabase'
 import { useStore } from './lib/useStore'
 import { currentMonthKey } from './lib/format'
 import type { Job, JobInput, Transaction, TransactionInput } from './lib/types'
-import { exportExcel, exportJSON } from './lib/exportData'
+import { exportCSV, exportExcel } from './lib/exportData'
 import Auth from './components/Auth'
 import EntriesView from './components/EntriesView'
 import ReportsView from './components/ReportsView'
@@ -308,17 +308,10 @@ function MoreMenu({ store }: { store: ReturnType<typeof useStore> }) {
             />
             <MenuItem
               icon="download"
-              label="Backup (JSON) sichern"
+              label="Als CSV exportieren"
               onClick={() => {
-                exportJSON(store.transactions)
+                exportCSV(store.transactions)
                 setOpen(false)
-              }}
-            />
-            <ImportItem
-              onImported={async (rows) => {
-                const n = await store.importJSON(rows)
-                setOpen(false)
-                alert(`${n} Buchungen importiert.`)
               }}
             />
             <div className="my-1 border-t border-slate-100" />
@@ -356,51 +349,5 @@ function MenuItem({
       <Icon name={icon} size={17} />
       {label}
     </button>
-  )
-}
-
-function ImportItem({
-  onImported,
-}: {
-  onImported: (rows: TransactionInput[]) => void
-}) {
-  function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    if (!file) return
-    const reader = new FileReader()
-    reader.onload = () => {
-      try {
-        const data = JSON.parse(String(reader.result))
-        const raw = Array.isArray(data) ? data : data.transactions
-        if (!Array.isArray(raw)) throw new Error('Ungültiges Format')
-        const rows: TransactionInput[] = raw.map((t: Record<string, unknown>) => ({
-          kind: t.kind === 'einnahme' ? 'einnahme' : 'ausgabe',
-          amount: Number(t.amount),
-          category: String(t.category ?? 'Sonstiges'),
-          date: String(t.date),
-          note: t.note != null ? String(t.note) : null,
-          vat_rate: t.vat_rate != null ? Number(t.vat_rate) : null,
-          job_id: null,
-        }))
-        onImported(rows)
-      } catch {
-        alert('Datei konnte nicht gelesen werden (kein gültiges Backup).')
-      }
-    }
-    reader.readAsText(file)
-    e.target.value = ''
-  }
-
-  return (
-    <label className="flex w-full cursor-pointer items-center gap-3 px-4 py-2.5 text-left text-sm text-slate-700 transition hover:bg-slate-50">
-      <Icon name="upload" size={17} />
-      Backup wiederherstellen
-      <input
-        type="file"
-        accept="application/json,.json"
-        className="hidden"
-        onChange={handleFile}
-      />
-    </label>
   )
 }
