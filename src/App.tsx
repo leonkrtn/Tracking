@@ -8,12 +8,13 @@ import { exportCSV, exportExcel } from './lib/exportData'
 import Auth from './components/Auth'
 import EntriesView from './components/EntriesView'
 import ReportsView from './components/ReportsView'
+import TaxView from './components/TaxView'
 import AddEditSheet from './components/AddEditSheet'
 import JobSheet from './components/JobSheet'
 import MonthNav from './components/MonthNav'
 import Icon, { type IconName } from './components/Icon'
 
-type Tab = 'entries' | 'reports'
+type Tab = 'entries' | 'reports' | 'tax'
 
 export default function App() {
   const [session, setSession] = useState<Session | null>(null)
@@ -81,7 +82,8 @@ function Main({ userId }: { userId: string }) {
     ? store.jobs.find((j) => j.id === activeJob.id) ?? null
     : null
 
-  const title = tab === 'entries' ? 'Buchungen' : 'Auswertung'
+  const title =
+    tab === 'entries' ? 'Buchungen' : tab === 'reports' ? 'Auswertung' : 'Steuer'
 
   return (
     <div className="flex min-h-full bg-slate-50">
@@ -107,6 +109,12 @@ function Main({ userId }: { userId: string }) {
             label="Auswertung"
             active={tab === 'reports'}
             onClick={() => setTab('reports')}
+          />
+          <NavItem
+            icon="percent"
+            label="Steuer"
+            active={tab === 'tax'}
+            onClick={() => setTab('tax')}
           />
         </nav>
         <div className="mt-auto p-3">
@@ -167,12 +175,14 @@ function Main({ userId }: { userId: string }) {
                 onEdit={openEdit}
                 onOpenJob={setActiveJob}
               />
-            ) : (
+            ) : tab === 'reports' ? (
               <ReportsView
                 transactions={store.transactions}
                 jobs={store.jobs}
                 month={month}
               />
+            ) : (
+              <TaxView transactions={store.transactions} month={month} />
             )}
           </div>
         </main>
@@ -203,6 +213,12 @@ function Main({ userId }: { userId: string }) {
           onClick={() => setTab('reports')}
           icon="chart"
           label="Auswertung"
+        />
+        <TabButton
+          active={tab === 'tax'}
+          onClick={() => setTab('tax')}
+          icon="percent"
+          label="Steuer"
         />
       </nav>
 
