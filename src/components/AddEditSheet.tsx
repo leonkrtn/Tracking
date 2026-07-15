@@ -63,7 +63,7 @@ export default function AddEditSheet({
   const [err, setErr] = useState<string | null>(null)
   const [newCat, setNewCat] = useState('')
   const [showNewCat, setShowNewCat] = useState(false)
-  const [paid, setPaid] = useState(existing?.paid ?? true)
+  const [paid, setPaid] = useState(existing?.paid ?? false)
 
   // MwSt ist immer aktiv, Standard-Satz 0 %.
   const [vatRate, setVatRate] = useState<number>(existing?.vat_rate ?? 0)

@@ -382,14 +382,15 @@ export default function JobSheet({
                     </button>
                     <button
                       onClick={() => onTogglePaid(t.id, !t.paid)}
-                      className={`flex shrink-0 items-center gap-1 rounded-full px-2 py-1 text-xs font-medium transition ${
+                      title={t.paid ? 'Gezahlt' : 'Offen'}
+                      aria-label={t.paid ? 'Gezahlt' : 'Offen'}
+                      className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition ${
                         t.paid
                           ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100'
                           : 'bg-amber-50 text-amber-600 hover:bg-amber-100'
                       }`}
                     >
-                      {t.paid && <Icon name="check" size={11} />}
-                      {t.paid ? 'Gezahlt' : 'Offen'}
+                      {t.paid ? <Icon name="check" size={16} /> : <Icon name="clock" size={16} />}
                     </button>
                   </div>
                 ))}
