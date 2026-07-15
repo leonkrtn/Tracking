@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { supabase } from './supabase'
 import { friendlyError } from './errors'
+import { todayISO } from './format'
 import type { Category, Job, JobInput, Transaction, TransactionInput } from './types'
 
 export interface Store {
@@ -16,6 +17,7 @@ export interface Store {
   addCategory: (name: string, kind: Category['kind']) => Promise<void>
   addJob: (input: JobInput) => Promise<void>
   updateJob: (id: string, input: JobInput) => Promise<void>
+  finishJob: (id: string) => Promise<void>
   deleteJob: (id: string) => Promise<void>
 }
 
@@ -95,7 +97,9 @@ export function useStore(userId: string | null): Store {
   )
 
   const addJob = useCallback(async (input: JobInput) => {
-    const { error } = await supabase.from('jobs').insert(input)
+    const { error } = await supabase
+      .from('jobs')
+      .insert({ ...input, start_date: todayISO() })
     if (error) throw new Error(friendlyError(error.message))
     await reload()
   }, [reload])
@@ -108,6 +112,15 @@ export function useStore(userId: string | null): Store {
     },
     [reload],
   )
+
+  const finishJob = useCallback(async (id: string) => {
+    const { error } = await supabase
+      .from('jobs')
+      .update({ end_date: todayISO() })
+      .eq('id', id)
+    if (error) throw new Error(friendlyError(error.message))
+    await reload()
+  }, [reload])
 
   const deleteJob = useCallback(async (id: string) => {
     // Zugehörige Buchungen werden per DB-Cascade mitgelöscht.
@@ -129,6 +142,7 @@ export function useStore(userId: string | null): Store {
     addCategory,
     addJob,
     updateJob,
+    finishJob,
     deleteJob,
   }
 }

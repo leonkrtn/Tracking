@@ -11,6 +11,7 @@ interface Props {
   onAddEntry: () => void
   onEditEntry: (t: Transaction) => void
   onRename: (id: string, input: JobInput) => Promise<void>
+  onFinish: (id: string) => Promise<void>
   onDelete: (id: string) => Promise<void>
 }
 
@@ -21,6 +22,7 @@ export default function JobSheet({
   onAddEntry,
   onEditEntry,
   onRename,
+  onFinish,
   onDelete,
 }: Props) {
   const [editing, setEditing] = useState(false)
@@ -33,6 +35,7 @@ export default function JobSheet({
   const [noteValue, setNoteValue] = useState(job.note ?? '')
   const [noteBusy, setNoteBusy] = useState(false)
   const [noteErr, setNoteErr] = useState<string | null>(null)
+  const [finishBusy, setFinishBusy] = useState(false)
 
   const { income, expense } = useMemo(() => {
     let income = 0
@@ -70,6 +73,19 @@ export default function JobSheet({
       setNoteErr(e instanceof Error ? e.message : 'Speichern fehlgeschlagen.')
     } finally {
       setNoteBusy(false)
+    }
+  }
+
+  async function handleFinish() {
+    if (!confirm(`Auftrag „${job.name}" als beendet markieren? Das Enddatum wird auf heute gesetzt.`))
+      return
+    setFinishBusy(true)
+    try {
+      await onFinish(job.id)
+    } catch (e) {
+      alert(e instanceof Error ? e.message : 'Speichern fehlgeschlagen.')
+    } finally {
+      setFinishBusy(false)
     }
   }
 
@@ -218,6 +234,11 @@ export default function JobSheet({
                 {noteErr && (
                   <p className="mt-1 text-xs text-rose-600">{noteErr}</p>
                 )}
+                <p className="mt-1 text-xs text-slate-400">
+                  {job.end_date
+                    ? `${formatDate(job.start_date)} – ${formatDate(job.end_date)} · beendet`
+                    : `Seit ${formatDate(job.start_date)}`}
+                </p>
               </div>
               <div className="flex shrink-0 items-center gap-1">
                 <button
@@ -257,17 +278,38 @@ export default function JobSheet({
                   </p>
                 </div>
               </div>
-              <div className="rounded-xl border border-slate-200 bg-white p-3">
-                <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
-                  Gewinn
-                </p>
-                <p
-                  className={`mt-1 text-2xl font-semibold tabular-nums ${
-                    profit >= 0 ? 'text-slate-900' : 'text-rose-600'
-                  }`}
-                >
-                  {formatEURSigned(profit)}
-                </p>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="rounded-xl border border-slate-200 bg-white p-3">
+                  <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
+                    Gewinn
+                  </p>
+                  <p
+                    className={`mt-1 text-2xl font-semibold tabular-nums ${
+                      profit >= 0 ? 'text-slate-900' : 'text-rose-600'
+                    }`}
+                  >
+                    {formatEURSigned(profit)}
+                  </p>
+                </div>
+                {job.end_date ? (
+                  <div className="flex flex-col items-center justify-center rounded-xl border border-slate-200 bg-slate-50 p-3 text-center">
+                    <Icon name="clipboard-check" size={18} className="mb-1 text-slate-400" />
+                    <p className="text-xs font-medium text-slate-500">
+                      Beendet am {formatDate(job.end_date)}
+                    </p>
+                  </div>
+                ) : (
+                  <button
+                    onClick={handleFinish}
+                    disabled={finishBusy}
+                    className="flex flex-col items-center justify-center gap-1 rounded-xl border border-slate-200 bg-white p-3 text-center transition hover:bg-slate-50 disabled:opacity-60"
+                  >
+                    <Icon name="clipboard-check" size={18} className="text-slate-500" />
+                    <span className="text-xs font-medium text-slate-600">
+                      {finishBusy ? 'Speichere…' : 'Auftrag beenden'}
+                    </span>
+                  </button>
+                )}
               </div>
             </div>
 

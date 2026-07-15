@@ -210,6 +210,7 @@ function Main({ userId }: { userId: string }) {
           onAddEntry={() => openAddEntryToJob(liveActiveJob.id)}
           onEditEntry={openEdit}
           onRename={store.updateJob}
+          onFinish={store.finishJob}
           onDelete={async (id) => {
             await store.deleteJob(id)
             setActiveJob(null)

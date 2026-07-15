@@ -5,8 +5,9 @@
 --
 --  Hinweis: Läuft die App schon (Tabellen existieren bereits)?
 --  Dann reichen die kleinen Migrationen in
---  supabase/002_add_vat_rate.sql und supabase/003_add_jobs.sql –
---  dieses Skript hier ist für eine komplette Neuinstallation gedacht.
+--  supabase/002_add_vat_rate.sql, supabase/003_add_jobs.sql und
+--  supabase/004_add_job_dates.sql – dieses Skript hier ist für eine
+--  komplette Neuinstallation gedacht.
 -- ============================================================
 
 -- ---------- Tabelle: Aufträge ----------
@@ -15,6 +16,8 @@ create table if not exists public.jobs (
   user_id    uuid not null default auth.uid() references auth.users (id) on delete cascade,
   name       text not null,
   note       text,
+  start_date date not null default current_date,
+  end_date   date, -- gesetzt, sobald der Auftrag als beendet markiert wird
   created_at timestamptz not null default now()
 );
 

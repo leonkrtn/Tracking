@@ -35,6 +35,8 @@ export interface Job {
   user_id: string
   name: string
   note: string | null
+  start_date: string // ISO YYYY-MM-DD
+  end_date: string | null // gesetzt, sobald der Auftrag beendet wurde
   created_at: string
 }
 
