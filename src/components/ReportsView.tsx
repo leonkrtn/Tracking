@@ -10,7 +10,7 @@ import {
   XAxis,
 } from 'recharts'
 import type { Job, Transaction } from '../lib/types'
-import { formatEUR, formatEURSigned, formatMonth, monthKeyOf, shiftMonth } from '../lib/format'
+import { formatDate, formatEUR, formatEURSigned, formatMonth, monthKeyOf, shiftMonth } from '../lib/format'
 import { iconFor } from '../lib/categories'
 import { vatAmount } from '../lib/vat'
 import Icon from './Icon'
@@ -80,12 +80,10 @@ export default function ReportsView({ transactions, jobs, month }: Props) {
     let expense = 0
     let cashIn = 0
     let cashOut = 0
-    let offeneForderungen = 0
     for (const t of monthTx) {
       if (t.kind === 'einnahme') {
         income += t.amount
         if (t.paid) cashIn += t.amount
-        else offeneForderungen += t.amount
       } else {
         expense += t.amount
         if (t.paid) cashOut += t.amount
@@ -96,9 +94,27 @@ export default function ReportsView({ transactions, jobs, month }: Props) {
       expense,
       profit: income - expense,
       cashflow: cashIn - cashOut,
-      offeneForderungen,
     }
   }, [monthTx])
+
+  // Offene Posten – über alle Zeit, nicht nur den gewählten Monat
+  const jobsById = useMemo(() => new Map(jobs.map((j) => [j.id, j])), [jobs])
+  const openForderungen = useMemo(
+    () =>
+      transactions
+        .filter((t) => t.kind === 'einnahme' && !t.paid)
+        .sort((a, b) => b.date.localeCompare(a.date)),
+    [transactions],
+  )
+  const openVerbindlichkeiten = useMemo(
+    () =>
+      transactions
+        .filter((t) => t.kind === 'ausgabe' && !t.paid)
+        .sort((a, b) => b.date.localeCompare(a.date)),
+    [transactions],
+  )
+  const sumForderungen = openForderungen.reduce((s, t) => s + t.amount, 0)
+  const sumVerbindlichkeiten = openVerbindlichkeiten.reduce((s, t) => s + t.amount, 0)
 
   // Vormonatsvergleich
   const prevMonthKey = shiftMonth(month, -1)
@@ -184,13 +200,6 @@ export default function ReportsView({ transactions, jobs, month }: Props) {
   }, [monthTx])
   const hasVat = vat.vereinnahmt > 0 || vat.gezahlt > 0
 
-  // Steuerrücklage-Empfehlung: fällige MwSt + Richtwert 25 % vom Gewinn (Richtwert, keine Steuerberatung)
-  const ruecklage = useMemo(() => {
-    const vatPart = Math.max(0, vat.zahllast)
-    const profitPart = Math.max(0, money.profit) * 0.25
-    return { vatPart, profitPart, total: vatPart + profitPart }
-  }, [vat.zahllast, money.profit])
-
   // Auffälligkeit: Einnahmen ohne MwSt, obwohl bei Ausgaben MwSt anfiel
   const einnahmenOhneMwSt = useMemo(
     () => monthTx.filter((t) => t.kind === 'einnahme' && (t.vat_rate ?? 0) === 0),
@@ -246,17 +255,24 @@ export default function ReportsView({ transactions, jobs, month }: Props) {
             <p className="mt-0.5 text-xs text-slate-400">Nur bezahlte Buchungen</p>
           </div>
         </div>
-        {money.offeneForderungen > 0 && (
-          <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
-            <p className="text-xs font-medium uppercase tracking-wide text-amber-700">
-              Offene Forderungen
-            </p>
-            <p className="mt-1 text-xl font-semibold tabular-nums text-amber-700">
-              {formatEUR(money.offeneForderungen)}
-            </p>
-            <p className="mt-0.5 text-xs text-amber-600">
-              Noch nicht gezahlte Einnahmen dieses Monats
-            </p>
+        {(openForderungen.length > 0 || openVerbindlichkeiten.length > 0) && (
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <OpenItemsCard
+              label="Offene Forderungen"
+              hint="Noch nicht bezahlte Einnahmen"
+              sum={sumForderungen}
+              items={openForderungen}
+              jobsById={jobsById}
+              tone="amber"
+            />
+            <OpenItemsCard
+              label="Offene Verbindlichkeiten"
+              hint="Noch nicht bezahlte Ausgaben"
+              sum={sumVerbindlichkeiten}
+              items={openVerbindlichkeiten}
+              jobsById={jobsById}
+              tone="rose"
+            />
           </div>
         )}
       </div>
@@ -313,22 +329,6 @@ export default function ReportsView({ transactions, jobs, month }: Props) {
               {formatEURSigned(vat.zahllast)}
             </p>
           </div>
-        </div>
-      )}
-
-      {ruecklage.total > 0 && (
-        <div className="rounded-xl border border-slate-200 bg-white p-4">
-          <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
-            Empfohlene Rücklage
-          </p>
-          <p className="mt-1 text-xl font-semibold tabular-nums text-slate-900">
-            {formatEUR(ruecklage.total)}
-          </p>
-          <p className="mt-0.5 text-xs text-slate-400">
-            Fällige MwSt ({formatEUR(ruecklage.vatPart)}) + Richtwert 25 % vom
-            Gewinn für Steuern/Abgaben ({formatEUR(ruecklage.profitPart)}).
-            Ersetzt keine Steuerberatung.
-          </p>
         </div>
       )}
 
@@ -627,6 +627,89 @@ function DeltaBadge({
     >
       {up ? '▲' : '▼'} {Math.round(Math.abs(value))} %
     </p>
+  )
+}
+
+function OpenItemsCard({
+  label,
+  hint,
+  sum,
+  items,
+  jobsById,
+  tone,
+}: {
+  label: string
+  hint: string
+  sum: number
+  items: Transaction[]
+  jobsById: Map<string, Job>
+  tone: 'amber' | 'rose'
+}) {
+  const [open, setOpen] = useState(false)
+  if (items.length === 0) {
+    return (
+      <div className="rounded-xl border border-slate-200 bg-white p-4">
+        <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
+          {label}
+        </p>
+        <p className="mt-1 text-xl font-semibold tabular-nums text-slate-300">
+          {formatEUR(0)}
+        </p>
+        <p className="mt-0.5 text-xs text-slate-400">{hint}</p>
+      </div>
+    )
+  }
+  const colors =
+    tone === 'amber'
+      ? { border: 'border-amber-200', bg: 'bg-amber-50', text: 'text-amber-700', textSoft: 'text-amber-600' }
+      : { border: 'border-rose-200', bg: 'bg-rose-50', text: 'text-rose-700', textSoft: 'text-rose-600' }
+  return (
+    <div className={`overflow-hidden rounded-xl border ${colors.border} ${colors.bg}`}>
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="flex w-full items-center justify-between p-4 text-left"
+      >
+        <span>
+          <span className={`block text-xs font-medium uppercase tracking-wide ${colors.text}`}>
+            {label}
+          </span>
+          <span className={`mt-1 block text-xl font-semibold tabular-nums ${colors.text}`}>
+            {formatEUR(sum)}
+          </span>
+          <span className={`mt-0.5 block text-xs ${colors.textSoft}`}>{hint}</span>
+        </span>
+        <Icon
+          name="chevron-right"
+          size={16}
+          className={`shrink-0 transition ${colors.text} ${open ? 'rotate-90' : ''}`}
+        />
+      </button>
+      {open && (
+        <div className="divide-y divide-white/60 border-t border-white/60 bg-white/60">
+          {items.map((t) => (
+            <div key={t.id} className="flex items-center gap-3 px-4 py-2.5">
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white text-slate-500">
+                <Icon name={iconFor(t.category)} size={14} />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-sm text-slate-700">
+                  {t.category}
+                </span>
+                <span className="block truncate text-xs text-slate-400">
+                  {formatDate(t.date)}
+                  {' · '}
+                  {t.job_id ? jobsById.get(t.job_id)?.name ?? 'Auftrag' : 'Einzelbuchung'}
+                </span>
+              </span>
+              <span className={`shrink-0 text-sm font-semibold tabular-nums ${colors.text}`}>
+                {formatEUR(t.amount)}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
   )
 }
 
