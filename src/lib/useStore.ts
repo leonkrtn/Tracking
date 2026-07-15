@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { supabase } from './supabase'
+import { friendlyError } from './errors'
 import type { Category, Job, JobInput, Transaction, TransactionInput } from './types'
 
 export interface Store {
@@ -39,7 +40,7 @@ export function useStore(userId: string | null): Store {
       supabase.from('categories').select('id, name, kind'),
       supabase.from('jobs').select('*').order('created_at', { ascending: false }),
     ])
-    if (tx.error) setError(tx.error.message)
+    if (tx.error) setError(friendlyError(tx.error.message))
     else setTransactions(tx.data as Transaction[])
     if (!cat.error && cat.data) setCategories(cat.data as Category[])
     if (!jb.error && jb.data) setJobs(jb.data as Job[])
@@ -58,7 +59,7 @@ export function useStore(userId: string | null): Store {
 
   const addTransaction = useCallback(async (input: TransactionInput) => {
     const { error } = await supabase.from('transactions').insert(input)
-    if (error) throw new Error(error.message)
+    if (error) throw new Error(friendlyError(error.message))
     await reload()
   }, [reload])
 
@@ -68,7 +69,7 @@ export function useStore(userId: string | null): Store {
         .from('transactions')
         .update(input)
         .eq('id', id)
-      if (error) throw new Error(error.message)
+      if (error) throw new Error(friendlyError(error.message))
       await reload()
     },
     [reload],
@@ -76,7 +77,7 @@ export function useStore(userId: string | null): Store {
 
   const deleteTransaction = useCallback(async (id: string) => {
     const { error } = await supabase.from('transactions').delete().eq('id', id)
-    if (error) throw new Error(error.message)
+    if (error) throw new Error(friendlyError(error.message))
     await reload()
   }, [reload])
 
@@ -88,7 +89,7 @@ export function useStore(userId: string | null): Store {
         .from('categories')
         .insert({ name: clean, kind })
       // 23505 = unique violation → Kategorie existiert schon, ignorieren
-      if (error && error.code !== '23505') throw new Error(error.message)
+      if (error && error.code !== '23505') throw new Error(friendlyError(error.message))
       await reload()
     },
     [reload],
@@ -98,7 +99,7 @@ export function useStore(userId: string | null): Store {
     async (rows: TransactionInput[]) => {
       if (rows.length === 0) return 0
       const { error } = await supabase.from('transactions').insert(rows)
-      if (error) throw new Error(error.message)
+      if (error) throw new Error(friendlyError(error.message))
       await reload()
       return rows.length
     },
@@ -107,14 +108,14 @@ export function useStore(userId: string | null): Store {
 
   const addJob = useCallback(async (input: JobInput) => {
     const { error } = await supabase.from('jobs').insert(input)
-    if (error) throw new Error(error.message)
+    if (error) throw new Error(friendlyError(error.message))
     await reload()
   }, [reload])
 
   const updateJob = useCallback(
     async (id: string, input: JobInput) => {
       const { error } = await supabase.from('jobs').update(input).eq('id', id)
-      if (error) throw new Error(error.message)
+      if (error) throw new Error(friendlyError(error.message))
       await reload()
     },
     [reload],
@@ -123,7 +124,7 @@ export function useStore(userId: string | null): Store {
   const deleteJob = useCallback(async (id: string) => {
     // Zugehörige Buchungen werden per DB-Cascade mitgelöscht.
     const { error } = await supabase.from('jobs').delete().eq('id', id)
-    if (error) throw new Error(error.message)
+    if (error) throw new Error(friendlyError(error.message))
     await reload()
   }, [reload])
 

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { supabase } from '../lib/supabase'
+import { friendlyError } from '../lib/errors'
 import Icon from './Icon'
 
 // Benutzername wird intern auf eine feste "E-Mail" abgebildet – so kannst du
@@ -136,5 +137,5 @@ function uebersetze(m: string): string {
   if (/already registered/i.test(m))
     return 'Dieser Benutzername ist bereits vergeben.'
   if (/at least 6/i.test(m)) return 'Passwort muss mindestens 6 Zeichen haben.'
-  return m
+  return friendlyError(m)
 }
