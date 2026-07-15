@@ -12,6 +12,8 @@ interface Props {
   onEditEntry: (t: Transaction) => void
   onRename: (id: string, input: JobInput) => Promise<void>
   onFinish: (id: string) => Promise<void>
+  onReopen: (id: string) => Promise<void>
+  onTogglePaid: (id: string, paid: boolean) => Promise<void>
   onDelete: (id: string) => Promise<void>
 }
 
@@ -23,6 +25,8 @@ export default function JobSheet({
   onEditEntry,
   onRename,
   onFinish,
+  onReopen,
+  onTogglePaid,
   onDelete,
 }: Props) {
   const [editing, setEditing] = useState(false)
@@ -82,6 +86,19 @@ export default function JobSheet({
     setFinishBusy(true)
     try {
       await onFinish(job.id)
+    } catch (e) {
+      alert(e instanceof Error ? e.message : 'Speichern fehlgeschlagen.')
+    } finally {
+      setFinishBusy(false)
+    }
+  }
+
+  async function handleReopen() {
+    if (!confirm(`Auftrag „${job.name}" wieder aufnehmen? Das Enddatum wird entfernt.`))
+      return
+    setFinishBusy(true)
+    try {
+      await onReopen(job.id)
     } catch (e) {
       alert(e instanceof Error ? e.message : 'Speichern fehlgeschlagen.')
     } finally {
@@ -292,12 +309,16 @@ export default function JobSheet({
                   </p>
                 </div>
                 {job.end_date ? (
-                  <div className="flex flex-col items-center justify-center rounded-xl border border-slate-200 bg-slate-50 p-3 text-center">
-                    <Icon name="clipboard-check" size={18} className="mb-1 text-slate-400" />
-                    <p className="text-xs font-medium text-slate-500">
-                      Beendet am {formatDate(job.end_date)}
-                    </p>
-                  </div>
+                  <button
+                    onClick={handleReopen}
+                    disabled={finishBusy}
+                    className="flex flex-col items-center justify-center gap-1 rounded-xl border border-slate-200 bg-slate-50 p-3 text-center transition hover:bg-slate-100 disabled:opacity-60"
+                  >
+                    <Icon name="rotate" size={18} className="text-slate-400" />
+                    <span className="text-xs font-medium text-slate-500">
+                      {finishBusy ? 'Speichere…' : `Beendet am ${formatDate(job.end_date)}`}
+                    </span>
+                  </button>
                 ) : (
                   <button
                     onClick={handleFinish}
@@ -327,38 +348,50 @@ export default function JobSheet({
             ) : (
               <div className="divide-y divide-slate-100 overflow-hidden rounded-xl border border-slate-200 bg-white">
                 {transactions.map((t) => (
-                  <button
-                    key={t.id}
-                    onClick={() => onEditEntry(t)}
-                    className="flex w-full items-center gap-3 px-4 py-3 text-left transition hover:bg-slate-50"
-                  >
-                    <span
-                      className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${
-                        t.kind === 'einnahme'
-                          ? 'bg-emerald-50 text-emerald-600'
-                          : 'bg-slate-100 text-slate-600'
+                  <div key={t.id} className="flex items-center gap-3 px-4 py-3">
+                    <button
+                      onClick={() => onEditEntry(t)}
+                      className="flex min-w-0 flex-1 items-center gap-3 text-left"
+                    >
+                      <span
+                        className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${
+                          t.kind === 'einnahme'
+                            ? 'bg-emerald-50 text-emerald-600'
+                            : 'bg-slate-100 text-slate-600'
+                        }`}
+                      >
+                        <Icon name={iconFor(t.category)} size={18} />
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-sm font-medium text-slate-800">
+                          {t.category}
+                        </span>
+                        <span className="block truncate text-xs text-slate-400">
+                          {formatDate(t.date)}
+                          {t.note ? ` · ${t.note}` : ''}
+                        </span>
+                      </span>
+                      <span
+                        className={`shrink-0 text-sm font-semibold tabular-nums ${
+                          t.kind === 'einnahme' ? 'text-emerald-600' : 'text-slate-900'
+                        }`}
+                      >
+                        {t.kind === 'einnahme' ? '+' : '−'}
+                        {formatEUR(t.amount)}
+                      </span>
+                    </button>
+                    <button
+                      onClick={() => onTogglePaid(t.id, !t.paid)}
+                      className={`flex shrink-0 items-center gap-1 rounded-full px-2 py-1 text-xs font-medium transition ${
+                        t.paid
+                          ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100'
+                          : 'bg-amber-50 text-amber-600 hover:bg-amber-100'
                       }`}
                     >
-                      <Icon name={iconFor(t.category)} size={18} />
-                    </span>
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate text-sm font-medium text-slate-800">
-                        {t.category}
-                      </span>
-                      <span className="block truncate text-xs text-slate-400">
-                        {formatDate(t.date)}
-                        {t.note ? ` · ${t.note}` : ''}
-                      </span>
-                    </span>
-                    <span
-                      className={`shrink-0 text-sm font-semibold tabular-nums ${
-                        t.kind === 'einnahme' ? 'text-emerald-600' : 'text-slate-900'
-                      }`}
-                    >
-                      {t.kind === 'einnahme' ? '+' : '−'}
-                      {formatEUR(t.amount)}
-                    </span>
-                  </button>
+                      {t.paid && <Icon name="check" size={11} />}
+                      {t.paid ? 'Gezahlt' : 'Offen'}
+                    </button>
+                  </div>
                 ))}
               </div>
             )}

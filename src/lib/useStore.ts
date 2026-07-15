@@ -14,10 +14,12 @@ export interface Store {
   addTransaction: (input: TransactionInput) => Promise<void>
   updateTransaction: (id: string, input: TransactionInput) => Promise<void>
   deleteTransaction: (id: string) => Promise<void>
+  togglePaid: (id: string, paid: boolean) => Promise<void>
   addCategory: (name: string, kind: Category['kind']) => Promise<void>
   addJob: (input: JobInput) => Promise<void>
   updateJob: (id: string, input: JobInput) => Promise<void>
   finishJob: (id: string) => Promise<void>
+  reopenJob: (id: string) => Promise<void>
   deleteJob: (id: string) => Promise<void>
 }
 
@@ -82,6 +84,12 @@ export function useStore(userId: string | null): Store {
     await reload()
   }, [reload])
 
+  const togglePaid = useCallback(async (id: string, paid: boolean) => {
+    const { error } = await supabase.from('transactions').update({ paid }).eq('id', id)
+    if (error) throw new Error(friendlyError(error.message))
+    await reload()
+  }, [reload])
+
   const addCategory = useCallback(
     async (name: string, kind: Category['kind']) => {
       const clean = name.trim()
@@ -122,6 +130,15 @@ export function useStore(userId: string | null): Store {
     await reload()
   }, [reload])
 
+  const reopenJob = useCallback(async (id: string) => {
+    const { error } = await supabase
+      .from('jobs')
+      .update({ end_date: null })
+      .eq('id', id)
+    if (error) throw new Error(friendlyError(error.message))
+    await reload()
+  }, [reload])
+
   const deleteJob = useCallback(async (id: string) => {
     // Zugehörige Buchungen werden per DB-Cascade mitgelöscht.
     const { error } = await supabase.from('jobs').delete().eq('id', id)
@@ -139,10 +156,12 @@ export function useStore(userId: string | null): Store {
     addTransaction,
     updateTransaction,
     deleteTransaction,
+    togglePaid,
     addCategory,
     addJob,
     updateJob,
     finishJob,
+    reopenJob,
     deleteJob,
   }
 }

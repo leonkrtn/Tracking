@@ -74,6 +74,29 @@ export default function ReportsView({ transactions, month }: Props) {
     [monthTx],
   )
 
+  const money = useMemo(() => {
+    let income = 0
+    let expense = 0
+    let cashIn = 0
+    let cashOut = 0
+    let offeneForderungen = 0
+    for (const t of monthTx) {
+      if (t.kind === 'einnahme') {
+        income += t.amount
+        if (t.paid) cashIn += t.amount
+        else offeneForderungen += t.amount
+      } else {
+        expense += t.amount
+        if (t.paid) cashOut += t.amount
+      }
+    }
+    return {
+      profit: income - expense,
+      cashflow: cashIn - cashOut,
+      offeneForderungen,
+    }
+  }, [monthTx])
+
   const vat = useMemo(() => {
     let vereinnahmt = 0
     let gezahlt = 0
@@ -102,6 +125,50 @@ export default function ReportsView({ transactions, month }: Props) {
 
   return (
     <div className="space-y-5">
+      <div className="space-y-3">
+        <div className="grid grid-cols-2 gap-3">
+          <div className="min-w-0 rounded-xl border border-slate-200 bg-white p-4">
+            <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
+              Gewinn
+            </p>
+            <p
+              className={`mt-1 truncate text-xl font-semibold tabular-nums ${
+                money.profit >= 0 ? 'text-slate-900' : 'text-rose-600'
+              }`}
+            >
+              {formatEURSigned(money.profit)}
+            </p>
+            <p className="mt-0.5 text-xs text-slate-400">Einnahmen − Ausgaben</p>
+          </div>
+          <div className="min-w-0 rounded-xl border border-slate-200 bg-white p-4">
+            <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
+              Cashflow
+            </p>
+            <p
+              className={`mt-1 truncate text-xl font-semibold tabular-nums ${
+                money.cashflow >= 0 ? 'text-slate-900' : 'text-rose-600'
+              }`}
+            >
+              {formatEURSigned(money.cashflow)}
+            </p>
+            <p className="mt-0.5 text-xs text-slate-400">Nur bezahlte Buchungen</p>
+          </div>
+        </div>
+        {money.offeneForderungen > 0 && (
+          <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
+            <p className="text-xs font-medium uppercase tracking-wide text-amber-700">
+              Offene Forderungen
+            </p>
+            <p className="mt-1 text-xl font-semibold tabular-nums text-amber-700">
+              {formatEUR(money.offeneForderungen)}
+            </p>
+            <p className="mt-0.5 text-xs text-amber-600">
+              Noch nicht gezahlte Einnahmen dieses Monats
+            </p>
+          </div>
+        )}
+      </div>
+
       {hasVat && (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           <div className="rounded-xl border border-slate-200 bg-white p-4">

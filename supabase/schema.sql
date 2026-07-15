@@ -5,9 +5,9 @@
 --
 --  Hinweis: Läuft die App schon (Tabellen existieren bereits)?
 --  Dann reichen die kleinen Migrationen in
---  supabase/002_add_vat_rate.sql, supabase/003_add_jobs.sql und
---  supabase/004_add_job_dates.sql – dieses Skript hier ist für eine
---  komplette Neuinstallation gedacht.
+--  supabase/002_add_vat_rate.sql, supabase/003_add_jobs.sql,
+--  supabase/004_add_job_dates.sql und supabase/005_add_paid.sql –
+--  dieses Skript hier ist für eine komplette Neuinstallation gedacht.
 -- ============================================================
 
 -- ---------- Tabelle: Aufträge ----------
@@ -38,6 +38,7 @@ create table if not exists public.transactions (
   note       text,
   vat_rate   numeric(5, 2), -- MwSt-Satz in % (z. B. 19.00), NULL = ohne MwSt erfasst
   job_id     uuid references public.jobs (id) on delete cascade, -- NULL = eigenständige Buchung
+  paid       boolean not null default true, -- false = noch nicht gezahlt (offene Forderung/Verbindlichkeit)
   created_at timestamptz not null default now()
 );
 

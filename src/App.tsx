@@ -211,6 +211,8 @@ function Main({ userId }: { userId: string }) {
           onEditEntry={openEdit}
           onRename={store.updateJob}
           onFinish={store.finishJob}
+          onReopen={store.reopenJob}
+          onTogglePaid={store.togglePaid}
           onDelete={async (id) => {
             await store.deleteJob(id)
             setActiveJob(null)

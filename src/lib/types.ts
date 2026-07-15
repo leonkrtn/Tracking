@@ -10,6 +10,7 @@ export interface Transaction {
   note: string | null
   vat_rate: number | null // MwSt-Satz in % (z. B. 19), null = ohne MwSt erfasst
   job_id: string | null // Auftrag, dem diese Buchung zugeordnet ist (optional)
+  paid: boolean // false = noch nicht gezahlt (offene Forderung/Verbindlichkeit)
   created_at: string
 }
 
@@ -22,6 +23,7 @@ export interface TransactionInput {
   note: string | null
   vat_rate: number | null
   job_id: string | null
+  paid: boolean
 }
 
 export interface Category {

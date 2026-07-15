@@ -63,6 +63,7 @@ export default function AddEditSheet({
   const [err, setErr] = useState<string | null>(null)
   const [newCat, setNewCat] = useState('')
   const [showNewCat, setShowNewCat] = useState(false)
+  const [paid, setPaid] = useState(existing?.paid ?? true)
 
   // MwSt ist immer aktiv, Standard-Satz 0 %.
   const [vatRate, setVatRate] = useState<number>(existing?.vat_rate ?? 0)
@@ -116,6 +117,7 @@ export default function AddEditSheet({
         note: note.trim() || null,
         vat_rate: vatRate,
         job_id: effectiveJobId,
+        paid,
       })
       onClose()
     } catch (e) {
@@ -383,6 +385,26 @@ export default function AddEditSheet({
                 className={inputCls}
               />
             </div>
+
+            {/* Gezahlt */}
+            <button
+              type="button"
+              onClick={() => setPaid((p) => !p)}
+              className="mb-5 flex w-full items-center justify-between rounded-lg border border-slate-200 px-3.5 py-2.5"
+            >
+              <span className="text-sm font-medium text-slate-600">Gezahlt</span>
+              <span
+                className={`relative inline-flex h-5 w-9 items-center rounded-full transition ${
+                  paid ? 'bg-emerald-500' : 'bg-slate-200'
+                }`}
+              >
+                <span
+                  className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition ${
+                    paid ? 'translate-x-[18px]' : 'translate-x-1'
+                  }`}
+                />
+              </span>
+            </button>
           </>
         )}
 
