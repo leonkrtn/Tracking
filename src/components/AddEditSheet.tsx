@@ -53,7 +53,7 @@ export default function AddEditSheet({
   const [jobName, setJobName] = useState('')
   const [jobNote, setJobNote] = useState('')
 
-  const [kind, setKind] = useState<Kind>(existing?.kind ?? 'ausgabe')
+  const [kind, setKind] = useState<Kind>(existing?.kind ?? 'einnahme')
   const [category, setCategory] = useState(
     existing?.category ?? (isNewCostInJob ? 'Sonstiges' : ''),
   )
