@@ -39,3 +39,14 @@ input[type='date'] {
   min-width: 0;
   width: 100%;
 }
+
+/* Safari/iOS richtet den Datumswert sonst rechtsbündig aus */
+input[type='date']::-webkit-date-and-time-value {
+  text-align: left;
+}
+
+/* Chrome/Android schiebt Kalender-Icon + Wert sonst weit auseinander */
+input[type='date']::-webkit-calendar-picker-indicator {
+  margin-left: 0.5rem;
+  padding: 0;
+}
