@@ -29,6 +29,11 @@ export default function JobSheet({
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState<string | null>(null)
 
+  const [editingNote, setEditingNote] = useState(false)
+  const [noteValue, setNoteValue] = useState(job.note ?? '')
+  const [noteBusy, setNoteBusy] = useState(false)
+  const [noteErr, setNoteErr] = useState<string | null>(null)
+
   const { income, expense } = useMemo(() => {
     let income = 0
     let expense = 0
@@ -52,6 +57,19 @@ export default function JobSheet({
       setErr(e instanceof Error ? e.message : 'Speichern fehlgeschlagen.')
     } finally {
       setBusy(false)
+    }
+  }
+
+  async function handleSaveNote() {
+    setNoteErr(null)
+    setNoteBusy(true)
+    try {
+      await onRename(job.id, { name: job.name, note: noteValue.trim() || null })
+      setEditingNote(false)
+    } catch (e) {
+      setNoteErr(e instanceof Error ? e.message : 'Speichern fehlgeschlagen.')
+    } finally {
+      setNoteBusy(false)
     }
   }
 
@@ -153,15 +171,59 @@ export default function JobSheet({
                     {job.name}
                   </h2>
                 </div>
-                {job.note && (
-                  <p className="mt-1 truncate text-sm text-slate-500">{job.note}</p>
+                {editingNote ? (
+                  <div className="mt-1.5 flex items-center gap-2">
+                    <input
+                      type="text"
+                      autoFocus
+                      value={noteValue}
+                      onChange={(e) => setNoteValue(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleSaveNote()}
+                      placeholder="z. B. Kunde, Kennzeichen …"
+                      className="min-w-0 flex-1 rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-sm text-slate-900 outline-none focus:border-slate-900"
+                    />
+                    <button
+                      onClick={handleSaveNote}
+                      disabled={noteBusy}
+                      className="shrink-0 rounded-lg bg-slate-900 px-3 py-1.5 text-sm font-medium text-white disabled:opacity-60"
+                    >
+                      OK
+                    </button>
+                  </div>
+                ) : job.note ? (
+                  <div className="mt-1 flex items-center gap-1.5">
+                    <p className="truncate text-sm text-slate-500">{job.note}</p>
+                    <button
+                      onClick={() => {
+                        setNoteValue(job.note ?? '')
+                        setEditingNote(true)
+                      }}
+                      className="flex h-5 w-5 shrink-0 items-center justify-center text-slate-400 transition hover:text-slate-700"
+                      aria-label="Notiz bearbeiten"
+                    >
+                      <Icon name="pencil" size={13} />
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => {
+                      setNoteValue('')
+                      setEditingNote(true)
+                    }}
+                    className="mt-1 flex items-center gap-1 text-sm text-slate-400 transition hover:text-slate-700"
+                  >
+                    <Icon name="plus" size={13} /> Notiz hinzufügen
+                  </button>
+                )}
+                {noteErr && (
+                  <p className="mt-1 text-xs text-rose-600">{noteErr}</p>
                 )}
               </div>
               <div className="flex shrink-0 items-center gap-1">
                 <button
                   onClick={() => setEditing(true)}
                   className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100"
-                  aria-label="Bearbeiten"
+                  aria-label="Auftrag bearbeiten"
                 >
                   <Icon name="settings" size={17} />
                 </button>

@@ -14,6 +14,7 @@ type IconName =
   | 'more'
   | 'wrench'
   | 'folder'
+  | 'pencil'
   // Kategorien – Einnahmen
   | 'banknote'
   | 'tag'
@@ -76,6 +77,9 @@ const ICONS: Record<IconName, Elem[]> = {
   folder: [
     { p: 'M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z' },
   ],
+  pencil: [
+    { p: 'M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z' },
+  ],
 
   // Einnahmen
   banknote: [
@@ -95,11 +99,12 @@ const ICONS: Record<IconName, Elem[]> = {
     { p: 'M9 13l2 2 4-4' },
   ],
   settings: [
-    { c: [12, 12, 3] },
-    { p: 'M12 2v3' }, { p: 'M12 19v3' },
-    { p: 'M4.2 4.2l2.1 2.1' }, { p: 'M17.7 17.7l2.1 2.1' },
-    { p: 'M2 12h3' }, { p: 'M19 12h3' },
-    { p: 'M4.2 19.8l2.1-2.1' }, { p: 'M17.7 6.3l2.1-2.1' },
+    { c: [12, 12, 6.5] },
+    { c: [12, 12, 2.5] },
+    { r: [10, 1.3, 4, 3, 1] },
+    { r: [10, 19.7, 4, 3, 1] },
+    { r: [1.3, 10, 3, 4, 1] },
+    { r: [19.7, 10, 3, 4, 1] },
   ],
   spray: [
     { r: [7, 8, 8, 13, 1] },

@@ -64,15 +64,11 @@ export default function AddEditSheet({
   const [newCat, setNewCat] = useState('')
   const [showNewCat, setShowNewCat] = useState(false)
 
-  // MwSt: aus/an togglebar. Bei bestehendem MwSt-Eintrag vorbefüllt.
-  const [vatOn, setVatOn] = useState(existing?.vat_rate != null)
-  const [vatRate, setVatRate] = useState<number>(existing?.vat_rate ?? 19)
-  const [amount, setAmount] = useState(
-    existing ? String(existing.amount).replace('.', ',') : '',
-  )
+  // MwSt ist immer aktiv, Standard-Satz 0 %.
+  const [vatRate, setVatRate] = useState<number>(existing?.vat_rate ?? 0)
   const [netto, setNetto] = useState(
-    existing?.vat_rate != null
-      ? String(nettoFromBrutto(existing.amount, existing.vat_rate)).replace('.', ',')
+    existing
+      ? String(nettoFromBrutto(existing.amount, existing.vat_rate ?? 0)).replace('.', ',')
       : '',
   )
 
@@ -85,7 +81,7 @@ export default function AddEditSheet({
     if (category && !catList.includes(category)) setCategory('')
   }, [catList, category])
 
-  const bruttoPreview = vatOn ? bruttoFromNetto(parseAmount(netto) || 0, vatRate) : null
+  const bruttoPreview = bruttoFromNetto(parseAmount(netto) || 0, vatRate)
 
   const showJobForm = showToggle && entryMode === 'auftrag'
 
@@ -107,7 +103,7 @@ export default function AddEditSheet({
       return
     }
 
-    const value = vatOn ? bruttoPreview ?? 0 : parseAmount(amount)
+    const value = bruttoPreview
     if (!value || value <= 0) return setErr('Bitte einen gültigen Betrag eingeben.')
     if (!category) return setErr('Bitte eine Kategorie wählen.')
     setBusy(true)
@@ -118,7 +114,7 @@ export default function AddEditSheet({
         category,
         date,
         note: note.trim() || null,
-        vat_rate: vatOn ? vatRate : null,
+        vat_rate: vatRate,
         job_id: effectiveJobId,
       })
       onClose()
@@ -265,31 +261,11 @@ export default function AddEditSheet({
               </button>
             </div>
 
-            {/* Betrag + MwSt-Toggle */}
+            {/* Betrag (netto) + MwSt-Satz */}
             <div className="mb-4">
-              <div className="mb-1.5 flex items-center justify-between">
-                <label className="block text-sm font-medium text-slate-600">
-                  {vatOn ? 'Netto-Betrag' : 'Betrag'}
-                </label>
-                <button
-                  type="button"
-                  onClick={() => setVatOn((v) => !v)}
-                  className="flex items-center gap-2 text-xs font-medium text-slate-500"
-                >
-                  MwSt
-                  <span
-                    className={`relative inline-flex h-5 w-9 items-center rounded-full transition ${
-                      vatOn ? 'bg-slate-900' : 'bg-slate-200'
-                    }`}
-                  >
-                    <span
-                      className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition ${
-                        vatOn ? 'translate-x-[18px]' : 'translate-x-1'
-                      }`}
-                    />
-                  </span>
-                </button>
-              </div>
+              <label className="mb-1.5 block text-sm font-medium text-slate-600">
+                Netto-Betrag
+              </label>
 
               <div className="flex gap-2">
                 <div className="relative min-w-0 flex-1">
@@ -297,12 +273,8 @@ export default function AddEditSheet({
                     type="text"
                     inputMode="decimal"
                     autoFocus={!existing}
-                    value={vatOn ? netto : amount}
-                    onChange={(e) => {
-                      const v = e.target.value.replace(/[^0-9,.]/g, '')
-                      if (vatOn) setNetto(v)
-                      else setAmount(v)
-                    }}
+                    value={netto}
+                    onChange={(e) => setNetto(e.target.value.replace(/[^0-9,.]/g, ''))}
                     placeholder="0,00"
                     className="w-full rounded-lg border border-slate-300 bg-white py-2.5 pl-3.5 pr-9 text-2xl font-semibold tabular-nums text-slate-900 outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10"
                   />
@@ -310,29 +282,25 @@ export default function AddEditSheet({
                     €
                   </span>
                 </div>
-                {vatOn && (
-                  <select
-                    value={vatRate}
-                    onChange={(e) => setVatRate(Number(e.target.value))}
-                    className="w-24 shrink-0 rounded-lg border border-slate-300 bg-white px-2 text-base font-medium text-slate-900 outline-none focus:border-slate-900"
-                  >
-                    {VAT_RATES.map((r) => (
-                      <option key={r} value={r}>
-                        {r} %
-                      </option>
-                    ))}
-                  </select>
-                )}
+                <select
+                  value={vatRate}
+                  onChange={(e) => setVatRate(Number(e.target.value))}
+                  className="w-24 shrink-0 rounded-lg border border-slate-300 bg-white px-2 text-base font-medium text-slate-900 outline-none focus:border-slate-900"
+                >
+                  {VAT_RATES.map((r) => (
+                    <option key={r} value={r}>
+                      {r} %
+                    </option>
+                  ))}
+                </select>
               </div>
 
-              {vatOn && (
-                <p className="mt-1.5 text-sm text-slate-500">
-                  Brutto:{' '}
-                  <span className="font-medium text-slate-700">
-                    {formatEUR(bruttoPreview ?? 0)}
-                  </span>
-                </p>
-              )}
+              <p className="mt-1.5 text-sm text-slate-500">
+                Brutto:{' '}
+                <span className="font-medium text-slate-700">
+                  {formatEUR(bruttoPreview)}
+                </span>
+              </p>
             </div>
 
             {/* Kategorie */}
