@@ -27,8 +27,10 @@ Tailwind, Daten in **Supabase**.
 
 ## Einrichtung (einmalig)
 
-Das Supabase-Projekt **„Tracking"** ist bereits im Code hinterlegt
-(`src/lib/supabase.ts`).
+Projekt-URL und publishable Key sind in `src/lib/supabase.ts` hinterlegt
+und über Environment-Variablen überschreibbar (siehe `.env.example`).
+Ein `sb_secret_...` / service-role-Key gehört dort **nie** hinein – er
+umgeht RLS und wäre im Browser-Bundle öffentlich lesbar.
 
 Das Schema liegt als Migration in
 [`supabase/migrations/`](supabase/migrations/). Wer das Repo in Supabase
