@@ -8,7 +8,7 @@ Tailwind, Daten in **Supabase**.
 
 - **Buchungen** erfassen, bearbeiten und löschen (Betrag, Typ, Kategorie,
   Datum, Notiz)
-- **MwSt**: pro Buchung Netto-Betrag + Satz (0 % / 7 % / 19 %) eingeben,
+- **MwSt**: pro Buchung Netto-Betrag + Satz (0 % / 19 %) eingeben,
   Brutto wird automatisch berechnet
 - Kategorien für den Werkstattbetrieb (Arbeitslohn, Ersatzteile, Reifen,
   TÜV/AU, Werkzeug, Miete, Löhne, Versicherung, Kfz/Fuhrpark, …) – eigene
@@ -27,26 +27,45 @@ Tailwind, Daten in **Supabase**.
 
 ## Einrichtung (einmalig)
 
-Das Supabase-Projekt **„Tracking"** ist bereits im Code hinterlegt
-(`src/lib/supabase.ts`).
+Projekt-URL und publishable Key sind in `src/lib/supabase.ts` hinterlegt
+und über Environment-Variablen überschreibbar (siehe `.env.example`).
+Ein `sb_secret_...` / service-role-Key gehört dort **nie** hinein – er
+umgeht RLS und wäre im Browser-Bundle öffentlich lesbar.
 
-### Neuinstallation (Tabellen existieren noch nicht)
+Das Schema liegt als Migration in
+[`supabase/migrations/`](supabase/migrations/). Wer das Repo in Supabase
+verbunden hat, bekommt sie beim Push auf den Produktions-Branch
+automatisch angewendet – sonst per Hand:
 
-1. Supabase → Projekt **Tracking** → **SQL Editor** → **New query**
-2. Inhalt von [`supabase/schema.sql`](supabase/schema.sql) einfügen → **Run**
+### Neues / leeres Projekt
+
+1. Supabase → **SQL Editor** → **New query**
+2. Inhalt von
+   [`supabase/migrations/20260726120000_init.sql`](supabase/migrations/20260726120000_init.sql)
+   einfügen → **Run**. Das ist der komplette Stand; in
+   `supabase/legacy/` nichts zusätzlich ausführen.
 3. **Authentication** → **Sign In / Providers** → **Email** → **„Confirm
    email"** ausschalten → **Save**
+4. In der App „Konto anlegen" → Benutzername + Passwort
 
-### Bestehende Installation (Tabellen sind schon da)
+### Bestehendes Projekt auf den aktuellen Stand bringen
 
-Nur die MwSt-Spalte nachrüsten – im SQL Editor:
+Läuft schon eine ältere Version, ziehen die Einzelschritte in
+[`supabase/legacy/`](supabase/legacy/) sie nach – Reihenfolge und
+Voraussetzungen stehen dort im README.
 
-```sql
-alter table public.transactions
-  add column if not exists vat_rate numeric(5, 2);
-```
+### Künftige Schema-Änderungen
 
-(steht auch in [`supabase/002_add_vat_rate.sql`](supabase/002_add_vat_rate.sql))
+Neue Datei in `supabase/migrations/` anlegen (Name:
+`YYYYMMDDHHMMSS_beschreibung.sql`), nie die bestehende ändern und nichts
+mehr direkt im SQL-Editor „nebenbei" ausführen – sonst laufen Repo und
+Datenbank auseinander.
+
+### Umzug in einen anderen Supabase-Account
+
+Siehe [`supabase/UMZUG.md`](supabase/UMZUG.md) – dort steht, was
+`schema.sql` abdeckt und was zusätzlich nötig ist (Benutzer, Auth-
+Einstellungen, Daten, Keys).
 
 ---
 
@@ -69,14 +88,17 @@ npm run preview   # lokale Vorschau des Builds
 Statische Seite, z. B. auf **Vercel** oder **Netlify** deploybar
 (Build-Command `npm run build`, Output `dist`).
 
-### Eigenes Supabase-Projekt verwenden (optional)
+### Anderes Supabase-Projekt verwenden
 
-`.env.local` anlegen:
+`.env.local` nach dem Muster von [`.env.example`](.env.example) anlegen:
 
 ```
 VITE_SUPABASE_URL=https://DEIN-PROJEKT.supabase.co
-VITE_SUPABASE_ANON_KEY=dein_publishable_key
+VITE_SUPABASE_ANON_KEY=sb_publishable_...
 ```
+
+Beim Hoster (Vercel / Netlify) dieselben beiden Variablen setzen und neu
+deployen – dann ist für einen Projektwechsel keine Code-Änderung nötig.
 
 ---
 

@@ -1,13 +1,20 @@
 -- ============================================================
---  Meister-Kasse – Datenbank-Schema
---  Einmalig im Supabase SQL-Editor ausführen:
---  Projekt "Tracking" → SQL Editor → New query → einfügen → Run
+--  Meister-Kasse – Basis-Migration (kompletter aktueller Stand)
 --
---  Hinweis: Läuft die App schon (Tabellen existieren bereits)?
---  Dann reichen die kleinen Migrationen in
---  supabase/002_add_vat_rate.sql, supabase/003_add_jobs.sql,
---  supabase/004_add_job_dates.sql und supabase/005_add_paid.sql –
---  dieses Skript hier ist für eine komplette Neuinstallation gedacht.
+--  Diese Datei ist die einzige Quelle der Wahrheit für das Schema.
+--  Sie wird angewendet
+--    * automatisch von der Supabase-GitHub-Integration bzw. über
+--      `supabase db push`, oder
+--    * per Hand: Inhalt in SQL Editor → New query → Run.
+--
+--  Die alten Einzelschritte in supabase/legacy/ sind hier vollständig
+--  enthalten und dürfen NICHT zusätzlich ausgeführt werden.
+--
+--  Umzug in einen anderen Account: supabase/UMZUG.md
+--
+--  Das Skript ist idempotent und kann ohne Schaden mehrfach laufen.
+--  Künftige Änderungen kommen als NEUE Datei in supabase/migrations/,
+--  nicht als Änderung an dieser hier.
 -- ============================================================
 
 -- ---------- Tabelle: Aufträge ----------
@@ -21,11 +28,19 @@ create table if not exists public.jobs (
   created_at timestamptz not null default now()
 );
 
+-- Deckt den Fremdschlüssel auf user_id ab und bedient gleichzeitig die
+-- Abfrage der App (eigene Aufträge, neueste zuerst).
+create index if not exists jobs_user_created_idx
+  on public.jobs (user_id, created_at desc);
+
 alter table public.jobs enable row level security;
 
+-- Hinweis: auth.uid() steht bewusst in einem (select …) – so wertet
+-- Postgres den Wert einmal pro Abfrage aus statt einmal pro Zeile.
 drop policy if exists "own jobs – all" on public.jobs;
 create policy "own jobs – all" on public.jobs
-  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+  for all using ((select auth.uid()) = user_id)
+  with check ((select auth.uid()) = user_id);
 
 -- ---------- Tabelle: Buchungen ----------
 create table if not exists public.transactions (
@@ -51,19 +66,20 @@ alter table public.transactions enable row level security;
 
 drop policy if exists "own rows – select" on public.transactions;
 create policy "own rows – select" on public.transactions
-  for select using (auth.uid() = user_id);
+  for select using ((select auth.uid()) = user_id);
 
 drop policy if exists "own rows – insert" on public.transactions;
 create policy "own rows – insert" on public.transactions
-  for insert with check (auth.uid() = user_id);
+  for insert with check ((select auth.uid()) = user_id);
 
 drop policy if exists "own rows – update" on public.transactions;
 create policy "own rows – update" on public.transactions
-  for update using (auth.uid() = user_id) with check (auth.uid() = user_id);
+  for update using ((select auth.uid()) = user_id)
+  with check ((select auth.uid()) = user_id);
 
 drop policy if exists "own rows – delete" on public.transactions;
 create policy "own rows – delete" on public.transactions
-  for delete using (auth.uid() = user_id);
+  for delete using ((select auth.uid()) = user_id);
 
 -- ---------- Tabelle: Eigene Kategorien ----------
 create table if not exists public.categories (
@@ -79,4 +95,5 @@ alter table public.categories enable row level security;
 
 drop policy if exists "own categories – all" on public.categories;
 create policy "own categories – all" on public.categories
-  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+  for all using ((select auth.uid()) = user_id)
+  with check ((select auth.uid()) = user_id);
