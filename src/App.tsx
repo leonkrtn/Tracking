@@ -120,7 +120,7 @@ function Main({ userId }: { userId: string }) {
         <div className="mt-auto p-3">
           <button
             onClick={openNew}
-            className="flex w-full items-center justify-center gap-2 rounded-lg bg-slate-900 py-2.5 text-sm font-medium text-white transition hover:bg-slate-800"
+            className="btn-primary flex w-full items-center justify-center gap-2 text-sm"
           >
             <Icon name="plus" size={17} /> Neu
           </button>
@@ -134,25 +134,20 @@ function Main({ userId }: { userId: string }) {
           className="sticky top-0 z-30 border-b border-slate-200 bg-white/90 backdrop-blur"
           style={{ paddingTop: 'env(safe-area-inset-top)' }}
         >
-          <div className="flex h-14 items-center justify-between gap-3 px-4 md:h-16 md:px-6">
-            <h1 className="text-lg font-semibold tracking-tight text-slate-900">
+          {/* Eine Zeile – auf dem Handy sparte die zweite Zeile nur Platz weg */}
+          <div className="flex h-14 items-center justify-between gap-2 px-3 sm:gap-3 sm:px-4 md:h-16 md:px-6">
+            <h1 className="min-w-0 truncate text-base font-semibold tracking-tight text-slate-900 sm:text-lg">
               {title}
             </h1>
-            <div className="flex items-center gap-2 md:gap-3">
-              <div className="hidden sm:block">
-                <MonthNav month={month} onChange={setMonth} />
-              </div>
+            <div className="flex shrink-0 items-center gap-1 sm:gap-2 md:gap-3">
+              <MonthNav month={month} onChange={setMonth} />
               <MoreMenu store={store} />
             </div>
-          </div>
-          {/* MonthNav mobil (eigene Zeile) */}
-          <div className="flex justify-center border-t border-slate-100 py-2 sm:hidden">
-            <MonthNav month={month} onChange={setMonth} />
           </div>
         </header>
 
         {/* Inhalt */}
-        <main className="flex-1 pb-28 md:pb-8">
+        <main className="flex-1 pb-content-b md:pb-8">
           <div className="mx-auto w-full max-w-5xl px-4 py-5 md:px-6 md:py-6">
             {store.error && (
               <div className="mb-4 rounded-lg bg-rose-50 px-4 py-3 text-sm text-rose-600">
@@ -188,10 +183,10 @@ function Main({ userId }: { userId: string }) {
         </main>
       </div>
 
-      {/* Floating + (nur Handy) */}
+      {/* Floating + (nur Handy) – sitzt über der Tab-Leiste inkl. Safe-Area */}
       <button
         onClick={openNew}
-        className="fixed bottom-20 right-5 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-slate-900 text-white shadow-lg transition active:scale-95 md:hidden"
+        className="fixed bottom-fab right-5 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-slate-900 text-white shadow-lg transition active:scale-95 md:hidden"
         aria-label="Neu"
       >
         <Icon name="plus" size={26} />
@@ -270,10 +265,10 @@ function NavItem({
   return (
     <button
       onClick={onClick}
-      className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition ${
+      className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition ${
         active
           ? 'bg-slate-100 text-slate-900'
-          : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'
+          : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800 active:bg-slate-100'
       }`}
     >
       <Icon name={icon} size={18} />
@@ -296,10 +291,17 @@ function TabButton({
   return (
     <button
       onClick={onClick}
-      className={`flex flex-1 flex-col items-center gap-0.5 py-2.5 text-xs font-medium transition ${
+      aria-current={active ? 'page' : undefined}
+      className={`relative flex min-h-[3.5rem] flex-1 flex-col items-center justify-center gap-0.5 py-2 text-xs font-medium transition active:bg-slate-50 ${
         active ? 'text-slate-900' : 'text-slate-400'
       }`}
     >
+      {/* Aktiver Tab war bisher nur an der Textfarbe erkennbar */}
+      <span
+        className={`absolute inset-x-0 top-0 mx-auto h-0.5 w-9 rounded-full transition ${
+          active ? 'bg-slate-900' : 'bg-transparent'
+        }`}
+      />
       <Icon name={icon} size={22} />
       {label}
     </button>
@@ -312,15 +314,23 @@ function MoreMenu({ store }: { store: ReturnType<typeof useStore> }) {
     <div className="relative">
       <button
         onClick={() => setOpen((o) => !o)}
-        className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-600 transition hover:bg-slate-50"
+        className="flex h-11 w-11 items-center justify-center rounded-lg border border-slate-200 text-slate-600 transition hover:bg-slate-50 active:bg-slate-100 sm:h-9 sm:w-9"
         aria-label="Menü"
       >
         <Icon name="more" size={18} />
       </button>
       {open && (
         <>
-          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div className="absolute right-0 top-11 z-50 w-60 overflow-hidden rounded-xl border border-slate-200 bg-white py-1 shadow-lg">
+          <div
+            className="fixed inset-0 z-40 bg-slate-900/20 sm:bg-transparent"
+            onClick={() => setOpen(false)}
+          />
+          {/* Handy: Bottom-Sheet mit großen Zielen. Ab sm: Dropdown wie bisher. */}
+          <div
+            className="fixed inset-x-0 bottom-0 z-50 overflow-hidden rounded-t-2xl border-t border-slate-200 bg-white pt-2 shadow-sheet sm:absolute sm:inset-x-auto sm:bottom-auto sm:right-0 sm:top-11 sm:w-60 sm:rounded-xl sm:border sm:pt-1 sm:shadow-lg"
+            style={{ paddingBottom: 'calc(0.5rem + env(safe-area-inset-bottom))' }}
+          >
+            <div className="mx-auto mb-2 h-1 w-9 rounded-full bg-slate-200 sm:hidden" />
             <MenuItem
               icon="download"
               label="Als Excel exportieren"
@@ -365,7 +375,7 @@ function MenuItem({
   return (
     <button
       onClick={onClick}
-      className={`flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm transition hover:bg-slate-50 ${
+      className={`flex min-h-touch w-full items-center gap-3 px-4 py-3 text-left text-base transition hover:bg-slate-50 active:bg-slate-100 sm:py-2.5 sm:text-sm ${
         danger ? 'text-rose-600' : 'text-slate-700'
       }`}
     >

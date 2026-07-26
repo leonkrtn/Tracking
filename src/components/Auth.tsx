@@ -48,8 +48,14 @@ export default function Auth() {
   }
 
   return (
-    <div className="flex min-h-full flex-col items-center justify-center bg-slate-50 px-6 py-12">
-      <div className="w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
+    <div
+      className="flex min-h-full flex-col items-center justify-center bg-slate-50 px-5 py-10 sm:px-6 sm:py-12"
+      style={{
+        paddingTop: 'calc(2.5rem + env(safe-area-inset-top))',
+        paddingBottom: 'calc(2.5rem + env(safe-area-inset-bottom))',
+      }}
+    >
+      <div className="w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
         <div className="mb-7 flex flex-col items-center text-center">
           <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-slate-900 text-white">
             <Icon name="wrench" size={24} />
@@ -77,7 +83,7 @@ export default function Auth() {
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               placeholder="z. B. flavio"
-              className="w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 text-base text-slate-900 outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10"
+              className="field"
             />
           </div>
           <div>
@@ -91,14 +97,14 @@ export default function Auth() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
-              className="w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 text-base text-slate-900 outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10"
+              className="field"
             />
           </div>
 
           <button
             type="submit"
             disabled={busy}
-            className="w-full rounded-lg bg-slate-900 py-2.5 text-base font-medium text-white transition hover:bg-slate-800 active:scale-[0.99] disabled:opacity-60"
+            className="btn-primary w-full"
           >
             {busy
               ? 'Bitte warten…'
@@ -114,7 +120,7 @@ export default function Auth() {
             setMode((m) => (m === 'login' ? 'register' : 'login'))
             setMsg(null)
           }}
-          className="mt-4 w-full text-center text-sm font-medium text-slate-500 hover:text-slate-900"
+          className="mt-3 min-h-touch w-full rounded-lg text-center text-sm font-medium text-slate-500 transition hover:bg-slate-50 hover:text-slate-900 active:bg-slate-100"
         >
           {mode === 'login'
             ? 'Noch kein Konto? Jetzt anlegen'

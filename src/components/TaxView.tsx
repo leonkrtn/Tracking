@@ -73,20 +73,24 @@ export default function TaxView({ transactions, month }: Props) {
 
   return (
     <div className="space-y-5">
-      {/* Umschalter 19 % / 0 % */}
-      <div className="inline-flex rounded-lg bg-slate-100 p-1">
+      {/* Umschalter 19 % / 0 % – auf dem Handy vollbreit und mit 44px Höhe */}
+      <div className="grid grid-cols-2 gap-1 rounded-lg bg-slate-100 p-1 sm:inline-grid sm:w-auto">
         <button
           onClick={() => setRate(19)}
-          className={`rounded-md px-4 py-1.5 text-sm font-medium transition ${
-            rate === 19 ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500'
+          className={`min-h-[2.75rem] rounded-md px-4 text-sm font-medium transition sm:min-h-0 sm:py-1.5 ${
+            rate === 19
+              ? 'bg-white text-slate-900 shadow-sm'
+              : 'text-slate-500 active:bg-white/60'
           }`}
         >
           19 % MwSt
         </button>
         <button
           onClick={() => setRate(0)}
-          className={`rounded-md px-4 py-1.5 text-sm font-medium transition ${
-            rate === 0 ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500'
+          className={`min-h-[2.75rem] rounded-md px-4 text-sm font-medium transition sm:min-h-0 sm:py-1.5 ${
+            rate === 0
+              ? 'bg-white text-slate-900 shadow-sm'
+              : 'text-slate-500 active:bg-white/60'
           }`}
         >
           0 % MwSt
@@ -94,7 +98,7 @@ export default function TaxView({ transactions, month }: Props) {
       </div>
 
       {monthTx.length === 0 ? (
-        <div className="flex flex-col items-center rounded-xl border border-dashed border-slate-200 bg-white py-16 text-center">
+        <div className="flex flex-col items-center rounded-xl border border-dashed border-slate-200 bg-white px-6 py-14 text-center">
           <span className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-slate-400">
             <Icon name="percent" size={22} />
           </span>
@@ -105,11 +109,9 @@ export default function TaxView({ transactions, month }: Props) {
       ) : (
         <>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <div className="rounded-xl border border-slate-200 bg-white p-4">
-              <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
-                Einnahmen (netto)
-              </p>
-              <p className="mt-1 text-xl font-semibold tabular-nums text-emerald-600">
+            <div className="card min-w-0 p-4">
+              <p className="stat-label">Einnahmen (netto)</p>
+              <p className="mt-1 truncate text-2xl font-semibold tabular-nums text-emerald-600 sm:text-xl">
                 {formatEUR(stats.einnahmenNetto)}
               </p>
               {rate === 19 && (
@@ -118,11 +120,9 @@ export default function TaxView({ transactions, month }: Props) {
                 </p>
               )}
             </div>
-            <div className="rounded-xl border border-slate-200 bg-white p-4">
-              <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
-                Ausgaben (netto)
-              </p>
-              <p className="mt-1 text-xl font-semibold tabular-nums text-slate-900">
+            <div className="card min-w-0 p-4">
+              <p className="stat-label">Ausgaben (netto)</p>
+              <p className="mt-1 truncate text-2xl font-semibold tabular-nums text-slate-900 sm:text-xl">
                 {formatEUR(stats.ausgabenNetto)}
               </p>
               {rate === 19 && (
@@ -134,12 +134,10 @@ export default function TaxView({ transactions, month }: Props) {
           </div>
 
           {rate === 19 && (
-            <div className="rounded-xl border border-slate-200 bg-white p-4">
-              <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
-                USt-Zahllast {formatMonth(month)}
-              </p>
+            <div className="card min-w-0 p-4">
+              <p className="stat-label">USt-Zahllast {formatMonth(month)}</p>
               <p
-                className={`mt-1 text-xl font-semibold tabular-nums ${
+                className={`mt-1 truncate text-2xl font-semibold tabular-nums sm:text-xl ${
                   stats.zahllast >= 0 ? 'text-slate-900' : 'text-rose-600'
                 }`}
               >
@@ -158,7 +156,7 @@ export default function TaxView({ transactions, month }: Props) {
               <p className="text-xs font-medium uppercase tracking-wide text-amber-700">
                 Steuerplanung – seit Jahresbeginn {year}
               </p>
-              <p className="mt-1 text-xl font-semibold tabular-nums text-amber-700">
+              <p className="mt-1 truncate text-2xl font-semibold tabular-nums text-amber-700 sm:text-xl">
                 {formatEURSigned(ytdZahllast)}
               </p>
               <p className="mt-0.5 text-xs text-amber-600">
@@ -168,7 +166,7 @@ export default function TaxView({ transactions, month }: Props) {
             </div>
           )}
 
-          <section className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+          <section className="card overflow-hidden">
             <div className="border-b border-slate-100 px-4 py-3">
               <h2 className="text-sm font-semibold text-slate-800">
                 Buchungen mit {rate} % MwSt – {formatMonth(month)}
@@ -179,7 +177,7 @@ export default function TaxView({ transactions, month }: Props) {
                 .slice()
                 .sort((a, b) => b.date.localeCompare(a.date))
                 .map((t) => (
-                  <div key={t.id} className="flex items-center gap-3 px-4 py-2.5">
+                  <div key={t.id} className="flex items-center gap-3 px-4 py-3">
                     <span
                       className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${
                         t.kind === 'einnahme'
