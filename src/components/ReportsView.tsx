@@ -265,33 +265,34 @@ export default function ReportsView({ transactions, jobs, month }: Props) {
   return (
     <div className="space-y-5">
       <div className="space-y-3">
-        <div className="grid grid-cols-2 gap-3">
-          <div className="card min-w-0 p-4">
-            <p className="stat-label">
-              Gewinn
-            </p>
-            <p
-              className={`mt-1 truncate text-xl font-semibold tabular-nums ${
-                money.profit >= 0 ? 'text-slate-900' : 'text-rose-600'
-              }`}
-            >
-              {formatEURSigned(money.profit)}
-            </p>
-            <p className="mt-0.5 text-xs text-slate-400">Einnahmen − Ausgaben</p>
-          </div>
-          <div className="card min-w-0 p-4">
-            <p className="stat-label">
-              Cashflow
-            </p>
-            <p
-              className={`mt-1 truncate text-xl font-semibold tabular-nums ${
-                money.cashflow >= 0 ? 'text-slate-900' : 'text-rose-600'
-              }`}
-            >
-              {formatEURSigned(money.cashflow)}
-            </p>
-            <p className="mt-0.5 text-xs text-slate-400">Nur bezahlte Buchungen</p>
-          </div>
+        {/* Kennzahl und Trend stehen zusammen – vorher waren das zwei
+            getrennte Blöcke, zwischen denen man vergleichen musste. */}
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <KpiCard
+            label="Einnahmen"
+            value={formatEUR(money.income)}
+            tone="emerald"
+            delta={compare.hasPrevData ? compare.incomeDelta : undefined}
+          />
+          <KpiCard
+            label="Ausgaben"
+            value={formatEUR(money.expense)}
+            tone="rose"
+            delta={compare.hasPrevData ? compare.expenseDelta : undefined}
+            goodIsUp={false}
+          />
+          <KpiCard
+            label="Gewinn"
+            value={formatEURSigned(money.profit)}
+            tone={money.profit >= 0 ? 'slate' : 'rose'}
+            delta={compare.hasPrevData ? compare.profitDelta : undefined}
+          />
+          <KpiCard
+            label="Cashflow"
+            value={formatEURSigned(money.cashflow)}
+            tone={money.cashflow >= 0 ? 'slate' : 'rose'}
+            hint="Nur bezahlt"
+          />
         </div>
         {(openForderungen.length > 0 || openVerbindlichkeiten.length > 0) && (
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -315,56 +316,24 @@ export default function ReportsView({ transactions, jobs, month }: Props) {
         )}
       </div>
 
-      {compare.hasPrevData && (
-        <div>
-          <p className="stat-label mb-2">Vormonatsvergleich</p>
-          <div className="grid grid-cols-3 gap-2 sm:gap-3">
-            <div className="card min-w-0 p-3 text-center">
-              <p className="truncate text-[11px] text-slate-400 sm:text-xs">Einnahmen</p>
-              <DeltaBadge value={compare.incomeDelta} />
-            </div>
-            <div className="card min-w-0 p-3 text-center">
-              <p className="truncate text-[11px] text-slate-400 sm:text-xs">Ausgaben</p>
-              <DeltaBadge value={compare.expenseDelta} goodIsUp={false} />
-            </div>
-            <div className="card min-w-0 p-3 text-center">
-              <p className="truncate text-[11px] text-slate-400 sm:text-xs">Gewinn</p>
-              <DeltaBadge value={compare.profitDelta} />
-            </div>
-          </div>
-        </div>
-      )}
-
       {hasVat && (
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <div className="card min-w-0 p-4">
-            <p className="stat-label">
-              Vereinnahmte MwSt
-            </p>
-            <p className="mt-1 truncate text-xl font-semibold tabular-nums text-slate-900">
-              {formatEUR(vat.vereinnahmt)}
-            </p>
-          </div>
-          <div className="card min-w-0 p-4">
-            <p className="stat-label">
-              Gezahlte MwSt
-            </p>
-            <p className="mt-1 truncate text-xl font-semibold tabular-nums text-slate-900">
-              {formatEUR(vat.gezahlt)}
-            </p>
-          </div>
-          <div className="card min-w-0 p-4">
-            <p className="stat-label">
-              Zahllast (Saldo)
-            </p>
-            <p
-              className={`mt-1 truncate text-xl font-semibold tabular-nums ${
-                vat.zahllast >= 0 ? 'text-slate-900' : 'text-rose-600'
-              }`}
-            >
-              {formatEURSigned(vat.zahllast)}
-            </p>
-          </div>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          <KpiCard
+            label="Vereinnahmte MwSt"
+            value={formatEUR(vat.vereinnahmt)}
+            tone="slate"
+          />
+          <KpiCard
+            label="Gezahlte MwSt"
+            value={formatEUR(vat.gezahlt)}
+            tone="slate"
+          />
+          <KpiCard
+            label="Zahllast (Saldo)"
+            value={formatEURSigned(vat.zahllast)}
+            tone={vat.zahllast >= 0 ? 'slate' : 'rose'}
+            className="col-span-2 sm:col-span-1"
+          />
         </div>
       )}
 
@@ -691,6 +660,47 @@ export default function ReportsView({ transactions, jobs, month }: Props) {
   )
 }
 
+const TONE = {
+  emerald: 'text-emerald-600',
+  rose: 'text-rose-600',
+  slate: 'text-slate-900',
+} as const
+
+/** Kennzahl mit Trend gegenüber dem Vormonat in einer Karte. */
+function KpiCard({
+  label,
+  value,
+  tone,
+  delta,
+  goodIsUp = true,
+  hint,
+  className = '',
+}: {
+  label: string
+  value: string
+  tone: keyof typeof TONE
+  delta?: number | null
+  goodIsUp?: boolean
+  hint?: string
+  className?: string
+}) {
+  return (
+    <div className={`card min-w-0 p-3 sm:p-4 ${className}`}>
+      <p className="stat-label truncate">{label}</p>
+      <p
+        className={`mt-1 truncate text-lg font-semibold tabular-nums sm:text-xl ${TONE[tone]}`}
+      >
+        {value}
+      </p>
+      {delta !== undefined ? (
+        <DeltaBadge value={delta} goodIsUp={goodIsUp} />
+      ) : hint ? (
+        <p className="mt-0.5 truncate text-xs text-slate-400">{hint}</p>
+      ) : null}
+    </div>
+  )
+}
+
 function DeltaBadge({
   value,
   goodIsUp = true,
@@ -699,17 +709,17 @@ function DeltaBadge({
   goodIsUp?: boolean
 }) {
   if (value === null) {
-    return <p className="mt-1 text-sm font-medium text-slate-400">neu</p>
+    return <p className="mt-0.5 text-xs font-medium text-slate-400">neu</p>
   }
   const up = value >= 0
   const good = goodIsUp ? up : !up
   return (
     <p
-      className={`mt-1 text-sm font-semibold tabular-nums ${
+      className={`mt-0.5 truncate text-xs font-medium tabular-nums ${
         good ? 'text-emerald-600' : 'text-rose-600'
       }`}
     >
-      {up ? '▲' : '▼'} {Math.round(Math.abs(value))} %
+      {up ? '▲' : '▼'} {Math.round(Math.abs(value))} % zum Vormonat
     </p>
   )
 }

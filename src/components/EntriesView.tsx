@@ -66,16 +66,41 @@ export default function EntriesView({
   }, [jobs, jobSearch, jobStatus])
 
   const jobProfits = useMemo(() => {
-    const map = new Map<string, { income: number; expense: number }>()
+    const map = new Map<
+      string,
+      { income: number; expense: number; openCount: number }
+    >()
     for (const t of transactions) {
       if (!t.job_id) continue
-      const entry = map.get(t.job_id) ?? { income: 0, expense: 0 }
+      const entry = map.get(t.job_id) ?? { income: 0, expense: 0, openCount: 0 }
       if (t.kind === 'einnahme') entry.income += t.amount
       else entry.expense += t.amount
+      if (!t.paid) entry.openCount++
       map.set(t.job_id, entry)
     }
     return map
   }, [transactions])
+
+  // Offene Posten über alle Monate – wer wem noch was schuldet, ist die
+  // wichtigste Zahl im Alltag und stand bisher nur in der Auswertung.
+  const open = useMemo(() => {
+    let forderungen = 0
+    let verbindlichkeiten = 0
+    let cForderungen = 0
+    let cVerbindlichkeiten = 0
+    for (const t of transactions) {
+      if (t.paid) continue
+      if (t.kind === 'einnahme') {
+        forderungen += t.amount
+        cForderungen++
+      } else {
+        verbindlichkeiten += t.amount
+        cVerbindlichkeiten++
+      }
+    }
+    return { forderungen, verbindlichkeiten, cForderungen, cVerbindlichkeiten }
+  }, [transactions])
+  const hasOpen = open.cForderungen > 0 || open.cVerbindlichkeiten > 0
 
   const hasAnything = jobs.length > 0 || standaloneTx.length > 0
 
@@ -108,6 +133,30 @@ export default function EntriesView({
           </p>
         </div>
       </div>
+
+      {hasOpen && (
+        <div className="card flex items-center gap-3 px-4 py-3">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-amber-50 text-amber-600">
+            <Icon name="clock" size={17} />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-sm font-medium text-slate-800">
+              Offene Posten
+            </span>
+            <span className="block truncate text-xs text-slate-400">
+              {open.cForderungen} zu bekommen · {open.cVerbindlichkeiten} zu zahlen
+            </span>
+          </span>
+          <span className="shrink-0 text-right">
+            <span className="block text-sm font-semibold tabular-nums text-emerald-600">
+              +{formatEUR(open.forderungen)}
+            </span>
+            <span className="block text-xs font-medium tabular-nums text-rose-600">
+              −{formatEUR(open.verbindlichkeiten)}
+            </span>
+          </span>
+        </div>
+      )}
 
       {!hasAnything ? (
         <EmptyState />
@@ -198,26 +247,49 @@ export default function EntriesView({
               ) : (
                 <div className="card divide-y divide-slate-100 overflow-hidden">
                   {filteredJobs.map((job) => {
-                    const p = jobProfits.get(job.id) ?? { income: 0, expense: 0 }
+                    const p =
+                      jobProfits.get(job.id) ??
+                      { income: 0, expense: 0, openCount: 0 }
                     const profit = p.income - p.expense
+                    const done = !!job.end_date
                     return (
                       <button
                         key={job.id}
                         onClick={() => onOpenJob(job)}
                         className="row-tap flex min-h-touch w-full items-center gap-3 px-4 py-3.5 text-left"
                       >
-                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-600">
-                          <Icon name="folder" size={18} />
+                        {/* Status steckt im Symbol – spart eine eigene Zeile.
+                            Haken = erledigt, neutral = läuft noch. */}
+                        <span
+                          className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${
+                            done
+                              ? 'bg-emerald-50 text-emerald-600'
+                              : 'bg-slate-100 text-slate-600'
+                          }`}
+                        >
+                          <Icon
+                            name={done ? 'clipboard-check' : 'folder'}
+                            size={18}
+                          />
                         </span>
                         <span className="min-w-0 flex-1">
-                          <span className="block truncate text-sm font-medium text-slate-800">
+                          <span
+                            className={`block truncate text-sm font-medium ${
+                              done ? 'text-slate-500' : 'text-slate-800'
+                            }`}
+                          >
                             {job.name}
                           </span>
-                          {job.note && (
-                            <span className="block truncate text-xs text-slate-400">
-                              {job.note}
+                          <span className="flex items-center gap-1.5 text-xs text-slate-400">
+                            <span className="truncate">
+                              {job.note ?? (done ? 'Beendet' : 'Läuft')}
                             </span>
-                          )}
+                            {p.openCount > 0 && (
+                              <span className="shrink-0 rounded bg-amber-50 px-1.5 py-0.5 text-[11px] font-medium text-amber-700">
+                                {p.openCount} offen
+                              </span>
+                            )}
+                          </span>
                         </span>
                         <span
                           className={`shrink-0 text-sm font-semibold tabular-nums ${
@@ -260,11 +332,14 @@ export default function EntriesView({
                       <span className="block truncate text-sm font-medium text-slate-800">
                         {t.category}
                       </span>
-                      {t.note && (
-                        <span className="block truncate text-xs text-slate-400">
-                          {t.note}
-                        </span>
-                      )}
+                      <span className="flex items-center gap-1.5 text-xs text-slate-400">
+                        {t.note && <span className="truncate">{t.note}</span>}
+                        {!t.paid && (
+                          <span className="shrink-0 rounded bg-amber-50 px-1.5 py-0.5 text-[11px] font-medium text-amber-700">
+                            offen
+                          </span>
+                        )}
+                      </span>
                     </span>
                     <span
                       className={`shrink-0 text-sm font-semibold tabular-nums ${

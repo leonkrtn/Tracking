@@ -7,7 +7,7 @@ import type {
   TransactionInput,
 } from '../lib/types'
 import { DEFAULT_CATEGORIES, VAT_RATES, iconFor } from '../lib/categories'
-import { formatEUR, todayISO } from '../lib/format'
+import { formatEUR, todayISO, yesterdayISO } from '../lib/format'
 import { useSheet } from '../lib/useSheet'
 import { bruttoFromNetto, nettoFromBrutto } from '../lib/vat'
 import Icon from './Icon'
@@ -34,6 +34,34 @@ interface Props {
 
 function parseAmount(v: string): number {
   return Number(v.replace(/\./g, '').replace(',', '.'))
+}
+
+function DateChip({
+  label,
+  value,
+  current,
+  onPick,
+}: {
+  label: string
+  value: string
+  current: string
+  onPick: (v: string) => void
+}) {
+  const on = current === value
+  return (
+    <button
+      type="button"
+      onClick={() => onPick(value)}
+      aria-pressed={on}
+      className={`min-h-touch rounded-lg border px-3 text-sm font-medium transition ${
+        on
+          ? 'border-slate-900 bg-slate-900 text-white'
+          : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50 active:bg-slate-100'
+      }`}
+    >
+      {label}
+    </button>
+  )
 }
 
 export default function AddEditSheet({
@@ -215,7 +243,6 @@ export default function AddEditSheet({
               </label>
               <input
                 type="text"
-                autoFocus
                 value={jobName}
                 onChange={(e) => setJobName(e.target.value)}
                 placeholder="z. B. VW Golf – Kupplung"
@@ -240,16 +267,6 @@ export default function AddEditSheet({
             {/* Typ */}
             <div className="mb-4 grid grid-cols-2 gap-1 rounded-lg bg-slate-100 p-1">
               <button
-                onClick={() => setKind('ausgabe')}
-                className={`min-h-[2.75rem] rounded-md py-2 text-sm font-medium transition ${
-                  kind === 'ausgabe'
-                    ? 'bg-white text-rose-600 shadow-sm'
-                    : 'text-slate-500 active:bg-white/60'
-                }`}
-              >
-                Ausgabe
-              </button>
-              <button
                 onClick={() => setKind('einnahme')}
                 className={`min-h-[2.75rem] rounded-md py-2 text-sm font-medium transition ${
                   kind === 'einnahme'
@@ -258,6 +275,16 @@ export default function AddEditSheet({
                 }`}
               >
                 Einnahme
+              </button>
+              <button
+                onClick={() => setKind('ausgabe')}
+                className={`min-h-[2.75rem] rounded-md py-2 text-sm font-medium transition ${
+                  kind === 'ausgabe'
+                    ? 'bg-white text-rose-600 shadow-sm'
+                    : 'text-slate-500 active:bg-white/60'
+                }`}
+              >
+                Ausgabe
               </button>
             </div>
 
@@ -274,7 +301,6 @@ export default function AddEditSheet({
                   <input
                     type="text"
                     inputMode="decimal"
-                    autoFocus={!existing}
                     value={netto}
                     onChange={(e) => setNetto(e.target.value.replace(/[^0-9,.]/g, ''))}
                     placeholder="0,00"
@@ -310,42 +336,42 @@ export default function AddEditSheet({
               </p>
             </div>
 
-            {/* Kategorie */}
+            {/* Kategorie – als Chips statt Dropdown: ein Tipp statt
+                aufklappen, scrollen, auswählen, schließen. */}
             <div className="mb-4">
               <label className="mb-1.5 block text-sm font-medium text-slate-600">
                 Kategorie
               </label>
-              <div className="relative">
-                <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">
-                  <Icon name={category ? iconFor(category) : 'package'} size={17} />
-                </span>
-                <select
-                  value={category}
-                  onChange={(e) => setCategory(e.target.value)}
-                  className="field appearance-none pl-10 pr-9"
+              <div className="flex flex-wrap gap-1.5">
+                {catList.map((c) => {
+                  const on = category === c
+                  return (
+                    <button
+                      key={c}
+                      type="button"
+                      onClick={() => setCategory(c)}
+                      aria-pressed={on}
+                      className={`flex min-h-[2.5rem] max-w-full items-center gap-1.5 rounded-lg border px-2.5 text-sm font-medium transition ${
+                        on
+                          ? 'border-slate-900 bg-slate-900 text-white'
+                          : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50 active:bg-slate-100'
+                      }`}
+                    >
+                      <Icon name={iconFor(c)} size={15} className="shrink-0" />
+                      <span className="truncate">{c}</span>
+                    </button>
+                  )
+                })}
+                <button
+                  type="button"
+                  onClick={() => setShowNewCat((s) => !s)}
+                  className="flex min-h-[2.5rem] items-center gap-1 rounded-lg border border-dashed border-slate-300 px-2.5 text-sm font-medium text-slate-500 transition hover:bg-slate-50 active:bg-slate-100"
                 >
-                  <option value="" disabled>
-                    Kategorie wählen
-                  </option>
-                  {catList.map((c) => (
-                    <option key={c} value={c}>
-                      {c}
-                    </option>
-                  ))}
-                </select>
-                <span className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400">
-                  <Icon name="chevron-right" className="rotate-90" size={16} />
-                </span>
+                  <Icon name="plus" size={14} /> Neu
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={() => setShowNewCat((s) => !s)}
-                className="mt-1 flex min-h-touch items-center gap-1 text-sm font-medium text-slate-500 transition hover:text-slate-900 active:text-slate-900"
-              >
-                <Icon name="plus" size={14} /> Neue Kategorie
-              </button>
               {showNewCat && (
-                <div className="mt-1 flex gap-2">
+                <div className="mt-2 flex gap-2">
                   <input
                     type="text"
                     value={newCat}
@@ -361,17 +387,23 @@ export default function AddEditSheet({
               )}
             </div>
 
-            {/* Datum */}
+            {/* Datum – „Heute" deckt den Normalfall mit einem Tipp ab */}
             <div className="mb-4">
               <label className="mb-1.5 block text-sm font-medium text-slate-600">
                 Datum
               </label>
-              <input
-                type="date"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-                className="field"
-              />
+              <div className="flex flex-wrap items-center gap-2">
+                <input
+                  type="date"
+                  value={date}
+                  onChange={(e) => setDate(e.target.value)}
+                  className="field min-w-[9rem] flex-1"
+                />
+                <div className="flex shrink-0 gap-1.5">
+                  <DateChip label="Heute" value={todayISO()} current={date} onPick={setDate} />
+                  <DateChip label="Gestern" value={yesterdayISO()} current={date} onPick={setDate} />
+                </div>
+              </div>
             </div>
 
             {/* Notiz */}

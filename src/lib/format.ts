@@ -51,6 +51,13 @@ export function todayISO(): string {
   return new Date(d.getTime() - off * 60000).toISOString().slice(0, 10)
 }
 
+export function yesterdayISO(): string {
+  const d = new Date()
+  d.setDate(d.getDate() - 1)
+  const off = d.getTimezoneOffset()
+  return new Date(d.getTime() - off * 60000).toISOString().slice(0, 10)
+}
+
 export function monthKeyOf(iso: string): string {
   return iso.slice(0, 7)
 }

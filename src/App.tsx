@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { Suspense, lazy, useEffect, useState } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import { supabase } from './lib/supabase'
 import { useStore } from './lib/useStore'
@@ -7,7 +7,9 @@ import type { Job, JobInput, Transaction, TransactionInput } from './lib/types'
 import { exportCSV, exportExcel } from './lib/exportData'
 import Auth from './components/Auth'
 import EntriesView from './components/EntriesView'
-import ReportsView from './components/ReportsView'
+// Die Diagramm-Bibliothek wird erst geladen, wenn die Auswertung geöffnet
+// wird – sie ist der größte Brocken im Bundle und beim Start nicht nötig.
+const ReportsView = lazy(() => import('./components/ReportsView'))
 import TaxView from './components/TaxView'
 import AddEditSheet from './components/AddEditSheet'
 import JobSheet from './components/JobSheet'
@@ -161,7 +163,7 @@ function Main({ userId }: { userId: string }) {
               </div>
             )}
             {store.loading ? (
-              <p className="py-16 text-center text-slate-400">Lädt Daten…</p>
+              <LoadingSkeleton />
             ) : tab === 'entries' ? (
               <EntriesView
                 transactions={store.transactions}
@@ -171,11 +173,13 @@ function Main({ userId }: { userId: string }) {
                 onOpenJob={setActiveJob}
               />
             ) : tab === 'reports' ? (
-              <ReportsView
-                transactions={store.transactions}
-                jobs={store.jobs}
-                month={month}
-              />
+              <Suspense fallback={<LoadingSkeleton />}>
+                <ReportsView
+                  transactions={store.transactions}
+                  jobs={store.jobs}
+                  month={month}
+                />
+              </Suspense>
             ) : (
               <TaxView transactions={store.transactions} month={month} />
             )}
@@ -247,6 +251,25 @@ function Main({ userId }: { userId: string }) {
           onAddCategory={store.addCategory}
         />
       )}
+    </div>
+  )
+}
+
+/** Platzhalter in der Form des späteren Inhalts – wirkt schneller als Text. */
+function LoadingSkeleton() {
+  return (
+    <div className="animate-pulse space-y-5" aria-label="Lädt" role="status">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+        <div className="col-span-2 h-[92px] rounded-xl bg-slate-200/70 sm:col-span-1" />
+        <div className="h-[92px] rounded-xl bg-slate-200/70" />
+        <div className="h-[92px] rounded-xl bg-slate-200/70" />
+      </div>
+      <div className="h-11 rounded-lg bg-slate-200/70" />
+      <div className="space-y-2">
+        <div className="h-16 rounded-xl bg-slate-200/70" />
+        <div className="h-16 rounded-xl bg-slate-200/60" />
+        <div className="h-16 rounded-xl bg-slate-200/50" />
+      </div>
     </div>
   )
 }

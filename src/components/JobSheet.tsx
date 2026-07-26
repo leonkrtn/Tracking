@@ -156,7 +156,6 @@ export default function JobSheet({
               <label className="mb-1.5 block text-sm font-medium text-slate-600">Name</label>
               <input
                 type="text"
-                autoFocus
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 className="field"

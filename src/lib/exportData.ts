@@ -1,4 +1,3 @@
-import * as XLSX from 'xlsx'
 import type { Kind, Transaction } from './types'
 import { formatDate } from './format'
 import { nettoFromBrutto, vatAmount } from './vat'
@@ -49,8 +48,15 @@ function buildRows(transactions: Transaction[]): Row[] {
     })
 }
 
-/** Exportiert alle Buchungen als Excel-Datei (.xlsx). */
-export function exportExcel(transactions: Transaction[]) {
+/**
+ * Exportiert alle Buchungen als Excel-Datei (.xlsx).
+ *
+ * xlsx wird erst beim Export geladen – die Bibliothek macht den größten
+ * Teil des Bundles aus und wird beim Start der App nie gebraucht.
+ */
+export async function exportExcel(transactions: Transaction[]) {
+  const XLSX = await import('xlsx')
+
   const rows = buildRows(transactions).map((r) => ({
     Datum: r.Datum,
     Typ: r.Typ,
