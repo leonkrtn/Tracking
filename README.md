@@ -8,7 +8,7 @@ Tailwind, Daten in **Supabase**.
 
 - **Buchungen** erfassen, bearbeiten und löschen (Betrag, Typ, Kategorie,
   Datum, Notiz)
-- **MwSt**: pro Buchung Netto-Betrag + Satz (0 % / 7 % / 19 %) eingeben,
+- **MwSt**: pro Buchung Netto-Betrag + Satz (0 % / 19 %) eingeben,
   Brutto wird automatisch berechnet
 - Kategorien für den Werkstattbetrieb (Arbeitslohn, Ersatzteile, Reifen,
   TÜV/AU, Werkzeug, Miete, Löhne, Versicherung, Kfz/Fuhrpark, …) – eigene
@@ -30,23 +30,34 @@ Tailwind, Daten in **Supabase**.
 Das Supabase-Projekt **„Tracking"** ist bereits im Code hinterlegt
 (`src/lib/supabase.ts`).
 
-### Neuinstallation (Tabellen existieren noch nicht)
+### Neues / leeres Projekt
 
-1. Supabase → Projekt **Tracking** → **SQL Editor** → **New query**
+1. Supabase → **SQL Editor** → **New query**
 2. Inhalt von [`supabase/schema.sql`](supabase/schema.sql) einfügen → **Run**
+   – das ist der komplette aktuelle Stand. Die Dateien `002_*.sql` …
+   `006_*.sql` **nicht** zusätzlich ausführen.
 3. **Authentication** → **Sign In / Providers** → **Email** → **„Confirm
    email"** ausschalten → **Save**
+4. In der App „Konto anlegen" → Benutzername + Passwort
 
-### Bestehende Installation (Tabellen sind schon da)
+### Bestehendes Projekt auf den aktuellen Stand bringen
 
-Nur die MwSt-Spalte nachrüsten – im SQL Editor:
+Die noch fehlenden Schritte einzeln im SQL Editor ausführen (alle
+idempotent, mehrfaches Ausführen schadet nicht):
 
-```sql
-alter table public.transactions
-  add column if not exists vat_rate numeric(5, 2);
-```
+| Datei | Inhalt |
+|---|---|
+| [`002_add_vat_rate.sql`](supabase/002_add_vat_rate.sql) | Spalte `vat_rate` |
+| [`003_add_jobs.sql`](supabase/003_add_jobs.sql) | Tabelle `jobs` + `transactions.job_id` |
+| [`004_add_job_dates.sql`](supabase/004_add_job_dates.sql) | `start_date` / `end_date` |
+| [`005_add_paid.sql`](supabase/005_add_paid.sql) | Spalte `paid` |
+| [`006_optimize_rls.sql`](supabase/006_optimize_rls.sql) | schnellere RLS-Policies + Index auf `jobs.user_id` |
 
-(steht auch in [`supabase/002_add_vat_rate.sql`](supabase/002_add_vat_rate.sql))
+### Umzug in einen anderen Supabase-Account
+
+Siehe [`supabase/UMZUG.md`](supabase/UMZUG.md) – dort steht, was
+`schema.sql` abdeckt und was zusätzlich nötig ist (Benutzer, Auth-
+Einstellungen, Daten, Keys).
 
 ---
 
@@ -69,14 +80,17 @@ npm run preview   # lokale Vorschau des Builds
 Statische Seite, z. B. auf **Vercel** oder **Netlify** deploybar
 (Build-Command `npm run build`, Output `dist`).
 
-### Eigenes Supabase-Projekt verwenden (optional)
+### Anderes Supabase-Projekt verwenden
 
-`.env.local` anlegen:
+`.env.local` nach dem Muster von [`.env.example`](.env.example) anlegen:
 
 ```
 VITE_SUPABASE_URL=https://DEIN-PROJEKT.supabase.co
-VITE_SUPABASE_ANON_KEY=dein_publishable_key
+VITE_SUPABASE_ANON_KEY=sb_publishable_...
 ```
+
+Beim Hoster (Vercel / Netlify) dieselben beiden Variablen setzen und neu
+deployen – dann ist für einen Projektwechsel keine Code-Änderung nötig.
 
 ---
 
