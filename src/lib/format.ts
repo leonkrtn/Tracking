@@ -34,6 +34,17 @@ export function formatMonth(monthKey: string): string {
   return monthFmt.format(new Date(y, m - 1, 1))
 }
 
+const monthShortFmt = new Intl.DateTimeFormat('de-DE', {
+  month: 'short',
+  year: 'numeric',
+})
+
+// Kurzform für schmale Displays: "Jul. 2026" statt "Juli 2026"
+export function formatMonthShort(monthKey: string): string {
+  const [y, m] = monthKey.split('-').map(Number)
+  return monthShortFmt.format(new Date(y, m - 1, 1))
+}
+
 export function todayISO(): string {
   const d = new Date()
   const off = d.getTimezoneOffset()

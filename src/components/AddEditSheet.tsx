@@ -8,6 +8,7 @@ import type {
 } from '../lib/types'
 import { DEFAULT_CATEGORIES, VAT_RATES, iconFor } from '../lib/categories'
 import { formatEUR, todayISO } from '../lib/format'
+import { useSheet } from '../lib/useSheet'
 import { bruttoFromNetto, nettoFromBrutto } from '../lib/vat'
 import Icon from './Icon'
 
@@ -45,6 +46,8 @@ export default function AddEditSheet({
   onDelete,
   onAddCategory,
 }: Props) {
+  useSheet(onClose)
+
   const showToggle = existing === null && jobId === undefined
   const effectiveJobId = jobId === undefined ? null : jobId
   const isNewCostInJob = existing === null && typeof effectiveJobId === 'string'
@@ -148,9 +151,6 @@ export default function AddEditSheet({
     setShowNewCat(false)
   }
 
-  const inputCls =
-    'w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 text-base text-slate-900 outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10'
-
   const title = showJobForm
     ? 'Neuer Auftrag'
     : existing
@@ -160,48 +160,46 @@ export default function AddEditSheet({
         : 'Neue Buchung'
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-end justify-center overflow-x-hidden bg-slate-900/30 backdrop-blur-sm sm:items-center sm:p-4"
-      onClick={onClose}
-    >
+    <div className="sheet-backdrop" onClick={onClose}>
       <div
-        className="max-h-[92vh] w-full max-w-lg overflow-x-hidden overflow-y-auto rounded-t-2xl border border-slate-200 bg-white px-5 pt-3 shadow-2xl sm:rounded-2xl sm:pt-5"
-        style={{
-          paddingBottom: 'calc(1.5rem + env(safe-area-inset-bottom))',
-          touchAction: 'pan-y',
-        }}
+        className="sheet-panel"
+        style={{ touchAction: 'pan-y' }}
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="mx-auto mb-4 h-1 w-9 rounded-full bg-slate-200 sm:hidden" />
-        <div className="mb-5 flex items-center justify-between">
-          <h2 className="text-base font-semibold text-slate-900">{title}</h2>
-          <button
-            onClick={onClose}
-            className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100"
-            aria-label="Schließen"
-          >
-            <Icon name="x" size={18} />
-          </button>
+        <div className="shrink-0 px-5 pt-3 sm:pt-5">
+          <div className="sheet-handle" />
+          <div className="mb-4 flex items-center justify-between gap-2">
+            <h2 className="min-w-0 truncate text-base font-semibold text-slate-900">
+              {title}
+            </h2>
+            <button onClick={onClose} className="icon-btn shrink-0" aria-label="Schließen">
+              <Icon name="x" size={18} />
+            </button>
+          </div>
         </div>
 
+        <div className="sheet-body pb-4">
         {showToggle && (
           <div className="mb-4 grid grid-cols-2 gap-1 rounded-lg bg-slate-100 p-1">
             <button
               onClick={() => setEntryMode('auftrag')}
-              className={`flex items-center justify-center gap-1.5 rounded-md py-2 text-sm font-medium transition ${
+              className={`flex min-h-[2.75rem] items-center justify-center gap-1.5 rounded-md py-2 text-sm font-medium transition ${
                 entryMode === 'auftrag'
                   ? 'bg-white text-slate-900 shadow-sm'
-                  : 'text-slate-500'
+                  : 'text-slate-500 active:bg-white/60'
               }`}
             >
               <Icon name="folder" size={15} /> Auftrag
             </button>
             <button
               onClick={() => setEntryMode('buchung')}
-              className={`rounded-md py-2 text-sm font-medium transition ${
+              className={`min-h-[2.75rem] rounded-md py-2 text-sm font-medium transition ${
                 entryMode === 'buchung'
                   ? 'bg-white text-slate-900 shadow-sm'
-                  : 'text-slate-500'
+                  : 'text-slate-500 active:bg-white/60'
               }`}
             >
               Einzelbuchung
@@ -221,7 +219,7 @@ export default function AddEditSheet({
                 value={jobName}
                 onChange={(e) => setJobName(e.target.value)}
                 placeholder="z. B. VW Golf – Kupplung"
-                className={inputCls}
+                className="field"
               />
             </div>
             <div className="mb-5">
@@ -233,7 +231,7 @@ export default function AddEditSheet({
                 value={jobNote}
                 onChange={(e) => setJobNote(e.target.value)}
                 placeholder="z. B. Kunde, Kennzeichen …"
-                className={inputCls}
+                className="field"
               />
             </div>
           </>
@@ -243,20 +241,20 @@ export default function AddEditSheet({
             <div className="mb-4 grid grid-cols-2 gap-1 rounded-lg bg-slate-100 p-1">
               <button
                 onClick={() => setKind('ausgabe')}
-                className={`rounded-md py-2 text-sm font-medium transition ${
+                className={`min-h-[2.75rem] rounded-md py-2 text-sm font-medium transition ${
                   kind === 'ausgabe'
                     ? 'bg-white text-rose-600 shadow-sm'
-                    : 'text-slate-500'
+                    : 'text-slate-500 active:bg-white/60'
                 }`}
               >
                 Ausgabe
               </button>
               <button
                 onClick={() => setKind('einnahme')}
-                className={`rounded-md py-2 text-sm font-medium transition ${
+                className={`min-h-[2.75rem] rounded-md py-2 text-sm font-medium transition ${
                   kind === 'einnahme'
                     ? 'bg-white text-emerald-600 shadow-sm'
-                    : 'text-slate-500'
+                    : 'text-slate-500 active:bg-white/60'
                 }`}
               >
                 Einnahme
@@ -269,8 +267,10 @@ export default function AddEditSheet({
                 Netto-Betrag
               </label>
 
-              <div className="flex gap-2">
-                <div className="relative min-w-0 flex-1">
+              {/* Auf sehr schmalen Displays rutscht der MwSt-Schalter unter das
+                  Betragsfeld, statt es zusammenzuquetschen. */}
+              <div className="flex flex-wrap gap-2">
+                <div className="relative min-w-[9rem] flex-1">
                   <input
                     type="text"
                     inputMode="decimal"
@@ -278,7 +278,7 @@ export default function AddEditSheet({
                     value={netto}
                     onChange={(e) => setNetto(e.target.value.replace(/[^0-9,.]/g, ''))}
                     placeholder="0,00"
-                    className="w-full rounded-lg border border-slate-300 bg-white py-2.5 pl-3.5 pr-9 text-2xl font-semibold tabular-nums text-slate-900 outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10"
+                    className="field py-2 pl-3.5 pr-9 text-2xl font-semibold tabular-nums"
                   />
                   <span className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-lg text-slate-400">
                     €
@@ -290,10 +290,10 @@ export default function AddEditSheet({
                       key={r}
                       type="button"
                       onClick={() => setVatRate(r)}
-                      className={`rounded-md px-3 py-1.5 text-sm font-medium transition ${
+                      className={`min-h-[2.75rem] rounded-md px-3.5 text-sm font-medium transition ${
                         vatRate === r
                           ? 'bg-white text-slate-900 shadow-sm'
-                          : 'text-slate-500'
+                          : 'text-slate-500 active:bg-white/60'
                       }`}
                     >
                       {r} %
@@ -322,7 +322,7 @@ export default function AddEditSheet({
                 <select
                   value={category}
                   onChange={(e) => setCategory(e.target.value)}
-                  className="w-full appearance-none rounded-lg border border-slate-300 bg-white py-2.5 pl-10 pr-9 text-base text-slate-900 outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10"
+                  className="field appearance-none pl-10 pr-9"
                 >
                   <option value="" disabled>
                     Kategorie wählen
@@ -340,24 +340,21 @@ export default function AddEditSheet({
               <button
                 type="button"
                 onClick={() => setShowNewCat((s) => !s)}
-                className="mt-2 flex items-center gap-1 text-sm font-medium text-slate-500 hover:text-slate-900"
+                className="mt-1 flex min-h-touch items-center gap-1 text-sm font-medium text-slate-500 transition hover:text-slate-900 active:text-slate-900"
               >
                 <Icon name="plus" size={14} /> Neue Kategorie
               </button>
               {showNewCat && (
-                <div className="mt-2 flex gap-2">
+                <div className="mt-1 flex gap-2">
                   <input
                     type="text"
                     value={newCat}
                     autoFocus
                     onChange={(e) => setNewCat(e.target.value)}
                     placeholder="Neue Kategorie"
-                    className="min-w-0 flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-slate-900"
+                    className="field min-w-0 flex-1"
                   />
-                  <button
-                    onClick={handleAddCategory}
-                    className="shrink-0 rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white"
-                  >
+                  <button onClick={handleAddCategory} className="btn-primary shrink-0">
                     OK
                   </button>
                 </div>
@@ -373,7 +370,7 @@ export default function AddEditSheet({
                 type="date"
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
-                className={inputCls}
+                className="field"
               />
             </div>
 
@@ -387,7 +384,7 @@ export default function AddEditSheet({
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
                 placeholder="z. B. Rechnungsnummer, Kunde …"
-                className={inputCls}
+                className="field"
               />
             </div>
 
@@ -395,7 +392,7 @@ export default function AddEditSheet({
             <button
               type="button"
               onClick={() => setPaid((p) => !p)}
-              className="mb-5 flex w-full items-center justify-between rounded-lg border border-slate-200 px-3.5 py-2.5"
+              className="mb-2 flex min-h-touch w-full items-center justify-between rounded-lg border border-slate-200 px-3.5 py-2.5 transition hover:bg-slate-50 active:bg-slate-100"
             >
               <span className="text-sm font-medium text-slate-600">Gezahlt</span>
               <span
@@ -413,29 +410,37 @@ export default function AddEditSheet({
           </>
         )}
 
-        {err && (
-          <p className="mb-3 rounded-lg bg-rose-50 px-3 py-2 text-center text-sm text-rose-600">
-            {err}
-          </p>
-        )}
+        </div>
 
-        <div className="flex gap-3">
-          {existing && onDelete && (
-            <button
-              onClick={handleDelete}
-              disabled={busy}
-              className="flex shrink-0 items-center gap-1.5 rounded-lg border border-slate-200 px-4 py-2.5 text-sm font-medium text-rose-600 transition hover:bg-rose-50 disabled:opacity-50"
-            >
-              <Icon name="trash" size={16} /> Löschen
-            </button>
+        {/* Aktionsleiste bleibt stehen – bei offener Tastatur war „Speichern"
+            bisher oft außerhalb des Sichtbereichs. */}
+        <div
+          className="shrink-0 border-t border-slate-100 bg-white px-5 pt-3"
+          style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))' }}
+        >
+          {err && (
+            <p className="mb-3 rounded-lg bg-rose-50 px-3 py-2 text-center text-sm text-rose-600">
+              {err}
+            </p>
           )}
-          <button
-            onClick={handleSave}
-            disabled={busy}
-            className="min-w-0 flex-1 rounded-lg bg-slate-900 py-2.5 text-base font-medium text-white transition hover:bg-slate-800 active:scale-[0.99] disabled:opacity-60"
-          >
-            {busy ? 'Speichere…' : 'Speichern'}
-          </button>
+          <div className="flex gap-3">
+            {existing && onDelete && (
+              <button
+                onClick={handleDelete}
+                disabled={busy}
+                className="btn-secondary flex shrink-0 items-center gap-1.5 text-rose-600 hover:bg-rose-50 active:bg-rose-100"
+              >
+                <Icon name="trash" size={16} /> Löschen
+              </button>
+            )}
+            <button
+              onClick={handleSave}
+              disabled={busy}
+              className="btn-primary min-w-0 flex-1"
+            >
+              {busy ? 'Speichere…' : 'Speichern'}
+            </button>
+          </div>
         </div>
       </div>
     </div>

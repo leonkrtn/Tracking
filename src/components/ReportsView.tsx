@@ -251,7 +251,7 @@ export default function ReportsView({ transactions, jobs, month }: Props) {
 
   if (monthTx.length === 0) {
     return (
-      <div className="flex flex-col items-center rounded-xl border border-dashed border-slate-200 bg-white py-16 text-center">
+      <div className="flex flex-col items-center rounded-xl border border-dashed border-slate-200 bg-white px-6 py-14 text-center">
         <span className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-slate-400">
           <Icon name="chart" size={22} />
         </span>
@@ -266,8 +266,8 @@ export default function ReportsView({ transactions, jobs, month }: Props) {
     <div className="space-y-5">
       <div className="space-y-3">
         <div className="grid grid-cols-2 gap-3">
-          <div className="min-w-0 rounded-xl border border-slate-200 bg-white p-4">
-            <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
+          <div className="card min-w-0 p-4">
+            <p className="stat-label">
               Gewinn
             </p>
             <p
@@ -279,8 +279,8 @@ export default function ReportsView({ transactions, jobs, month }: Props) {
             </p>
             <p className="mt-0.5 text-xs text-slate-400">Einnahmen − Ausgaben</p>
           </div>
-          <div className="min-w-0 rounded-xl border border-slate-200 bg-white p-4">
-            <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
+          <div className="card min-w-0 p-4">
+            <p className="stat-label">
               Cashflow
             </p>
             <p
@@ -317,20 +317,18 @@ export default function ReportsView({ transactions, jobs, month }: Props) {
 
       {compare.hasPrevData && (
         <div>
-          <p className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-400">
-            Vormonatsvergleich
-          </p>
-          <div className="grid grid-cols-3 gap-3">
-            <div className="rounded-xl border border-slate-200 bg-white p-3 text-center">
-              <p className="text-xs text-slate-400">Einnahmen</p>
+          <p className="stat-label mb-2">Vormonatsvergleich</p>
+          <div className="grid grid-cols-3 gap-2 sm:gap-3">
+            <div className="card min-w-0 p-3 text-center">
+              <p className="truncate text-[11px] text-slate-400 sm:text-xs">Einnahmen</p>
               <DeltaBadge value={compare.incomeDelta} />
             </div>
-            <div className="rounded-xl border border-slate-200 bg-white p-3 text-center">
-              <p className="text-xs text-slate-400">Ausgaben</p>
+            <div className="card min-w-0 p-3 text-center">
+              <p className="truncate text-[11px] text-slate-400 sm:text-xs">Ausgaben</p>
               <DeltaBadge value={compare.expenseDelta} goodIsUp={false} />
             </div>
-            <div className="rounded-xl border border-slate-200 bg-white p-3 text-center">
-              <p className="text-xs text-slate-400">Gewinn</p>
+            <div className="card min-w-0 p-3 text-center">
+              <p className="truncate text-[11px] text-slate-400 sm:text-xs">Gewinn</p>
               <DeltaBadge value={compare.profitDelta} />
             </div>
           </div>
@@ -339,28 +337,28 @@ export default function ReportsView({ transactions, jobs, month }: Props) {
 
       {hasVat && (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <div className="rounded-xl border border-slate-200 bg-white p-4">
-            <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
+          <div className="card min-w-0 p-4">
+            <p className="stat-label">
               Vereinnahmte MwSt
             </p>
-            <p className="mt-1 text-xl font-semibold tabular-nums text-slate-900">
+            <p className="mt-1 truncate text-xl font-semibold tabular-nums text-slate-900">
               {formatEUR(vat.vereinnahmt)}
             </p>
           </div>
-          <div className="rounded-xl border border-slate-200 bg-white p-4">
-            <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
+          <div className="card min-w-0 p-4">
+            <p className="stat-label">
               Gezahlte MwSt
             </p>
-            <p className="mt-1 text-xl font-semibold tabular-nums text-slate-900">
+            <p className="mt-1 truncate text-xl font-semibold tabular-nums text-slate-900">
               {formatEUR(vat.gezahlt)}
             </p>
           </div>
-          <div className="rounded-xl border border-slate-200 bg-white p-4">
-            <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
+          <div className="card min-w-0 p-4">
+            <p className="stat-label">
               Zahllast (Saldo)
             </p>
             <p
-              className={`mt-1 text-xl font-semibold tabular-nums ${
+              className={`mt-1 truncate text-xl font-semibold tabular-nums ${
                 vat.zahllast >= 0 ? 'text-slate-900' : 'text-rose-600'
               }`}
             >
@@ -371,7 +369,7 @@ export default function ReportsView({ transactions, jobs, month }: Props) {
       )}
 
       {revenueByVat.rows.length > 0 && (
-        <section className="rounded-xl border border-slate-200 bg-white p-5">
+        <section className="card p-4 sm:p-5">
           <div className="mb-4 flex items-baseline justify-between">
             <h2 className="text-sm font-semibold text-slate-800">
               Umsatz nach Steuersatz
@@ -440,9 +438,9 @@ export default function ReportsView({ transactions, jobs, month }: Props) {
           )}
           <div className="divide-y divide-slate-100 overflow-hidden rounded-lg border border-slate-100 bg-white">
             {einnahmenOhneMwSt.map((t) => (
-              <div key={t.id} className="flex items-center gap-3 px-3 py-2">
-                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500">
-                  <Icon name={iconFor(t.category)} size={14} />
+              <div key={t.id} className="flex items-center gap-3 px-3 py-2.5">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500">
+                  <Icon name={iconFor(t.category)} size={15} />
                 </span>
                 <span className="min-w-0 flex-1 truncate text-sm text-slate-700">
                   {t.category}
@@ -458,7 +456,7 @@ export default function ReportsView({ transactions, jobs, month }: Props) {
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
         {/* Tortendiagramm */}
-        <section className="rounded-xl border border-slate-200 bg-white p-5">
+        <section className="card p-4 sm:p-5">
           <div className="mb-4 flex items-baseline justify-between">
             <h2 className="text-sm font-semibold text-slate-800">
               Ausgaben nach Kategorie
@@ -472,8 +470,8 @@ export default function ReportsView({ transactions, jobs, month }: Props) {
               Keine Ausgaben in diesem Monat.
             </p>
           ) : (
-            <div className="flex flex-col items-center gap-5 sm:flex-row">
-              <div className="h-44 w-44 shrink-0">
+            <div className="flex flex-col items-center gap-4 sm:flex-row sm:gap-5">
+              <div className="h-44 w-44 shrink-0 sm:h-44 sm:w-44">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
@@ -501,7 +499,7 @@ export default function ReportsView({ transactions, jobs, month }: Props) {
                   </PieChart>
                 </ResponsiveContainer>
               </div>
-              <ul className="w-full space-y-2">
+              <ul className="w-full space-y-2.5">
                 {byCategory.map((c, i) => (
                   <li key={c.name} className="flex items-center gap-2.5 text-sm">
                     <span
@@ -509,10 +507,10 @@ export default function ReportsView({ transactions, jobs, month }: Props) {
                       style={{ background: PIE_COLORS[i % PIE_COLORS.length] }}
                     />
                     <span className="min-w-0 flex-1 truncate text-slate-700">{c.name}</span>
-                    <span className="font-medium tabular-nums text-slate-800">
+                    <span className="shrink-0 font-medium tabular-nums text-slate-800">
                       {formatEUR(c.value)}
                     </span>
-                    <span className="w-9 text-right text-xs tabular-nums text-slate-400">
+                    <span className="w-11 shrink-0 text-right text-xs tabular-nums text-slate-400">
                       {totalExpense > 0
                         ? Math.round((c.value / totalExpense) * 100)
                         : 0}
@@ -526,18 +524,20 @@ export default function ReportsView({ transactions, jobs, month }: Props) {
         </section>
 
         {/* Verlauf */}
-        <section className="rounded-xl border border-slate-200 bg-white p-5">
+        <section className="card p-4 sm:p-5">
           <h2 className="mb-4 text-sm font-semibold text-slate-800">
             Verlauf (6 Monate)
           </h2>
-          <div className="h-44 w-full">
+          {/* Auf dem Handy etwas höher – bei 176px waren die Balken kaum lesbar */}
+          <div className="h-52 w-full sm:h-44">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={trend} barGap={2}>
                 <XAxis
                   dataKey="label"
                   tickLine={false}
                   axisLine={false}
-                  tick={{ fontSize: 11, fill: '#94a3b8' }}
+                  tick={{ fontSize: 12, fill: '#94a3b8' }}
+                  dy={4}
                 />
                 <Tooltip
                   formatter={(v: number) => formatEUR(v)}
@@ -568,18 +568,18 @@ export default function ReportsView({ transactions, jobs, month }: Props) {
       {jobStats.ranking.length > 0 && (
         <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
           {/* Auftrags-Kennzahlen */}
-          <section className="rounded-xl border border-slate-200 bg-white p-5">
+          <section className="card p-4 sm:p-5">
             <h2 className="mb-4 text-sm font-semibold text-slate-800">
               Auftrags-Kennzahlen
             </h2>
             <div className="grid grid-cols-2 gap-3">
-              <div className="min-w-0 rounded-xl border border-slate-200 p-3">
+              <div className="min-w-0 rounded-xl border border-slate-200 bg-slate-50/60 p-3">
                 <p className="text-xs text-slate-400">Ø Auftragswert</p>
                 <p className="mt-1 truncate text-lg font-semibold tabular-nums text-slate-900">
                   {jobStats.avgValue != null ? formatEUR(jobStats.avgValue) : '–'}
                 </p>
               </div>
-              <div className="min-w-0 rounded-xl border border-slate-200 p-3">
+              <div className="min-w-0 rounded-xl border border-slate-200 bg-slate-50/60 p-3">
                 <p className="text-xs text-slate-400">Ø Marge</p>
                 <p className="mt-1 truncate text-lg font-semibold tabular-nums text-slate-900">
                   {jobStats.avgMargin != null
@@ -588,9 +588,9 @@ export default function ReportsView({ transactions, jobs, month }: Props) {
                 </p>
               </div>
             </div>
-            <div className="mt-3 rounded-xl border border-slate-200 p-3">
+            <div className="mt-3 min-w-0 rounded-xl border border-slate-200 bg-slate-50/60 p-3">
               <p className="text-xs text-slate-400">Ø Auftragsdurchlaufzeit</p>
-              <p className="mt-1 text-lg font-semibold tabular-nums text-slate-900">
+              <p className="mt-1 truncate text-lg font-semibold tabular-nums text-slate-900">
                 {jobStats.avgDuration != null
                   ? `${jobStats.avgDuration.toFixed(0)} Tage`
                   : '–'}
@@ -603,7 +603,7 @@ export default function ReportsView({ transactions, jobs, month }: Props) {
           </section>
 
           {/* Top-Aufträge nach Gewinn */}
-          <section className="rounded-xl border border-slate-200 bg-white p-5">
+          <section className="card p-4 sm:p-5">
             <h2 className="mb-4 text-sm font-semibold text-slate-800">
               Top-Aufträge nach Gewinn
             </h2>
@@ -611,10 +611,10 @@ export default function ReportsView({ transactions, jobs, month }: Props) {
               {jobStats.ranking.slice(0, 5).map((r) => (
                 <li
                   key={r.job.id}
-                  className="flex items-center gap-3 rounded-lg px-2 py-2"
+                  className="flex items-center gap-3 rounded-lg px-1 py-2.5"
                 >
-                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500">
-                    <Icon name="folder" size={14} />
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500">
+                    <Icon name="folder" size={15} />
                   </span>
                   <span className="min-w-0 flex-1 truncate text-sm text-slate-700">
                     {r.job.name}
@@ -642,7 +642,8 @@ export default function ReportsView({ transactions, jobs, month }: Props) {
 
       {/* Filterbare Liste */}
       <section>
-        <div className="mb-3 flex flex-wrap gap-2">
+        {/* Auf dem Handy eine scrollbare Zeile statt vier umbrechender */}
+        <div className="no-scrollbar -mx-4 mb-3 flex snap-x gap-2 overflow-x-auto px-4 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0">
           <FilterChip
             active={!filterCat}
             onClick={() => setFilterCat(null)}
@@ -658,9 +659,9 @@ export default function ReportsView({ transactions, jobs, month }: Props) {
             />
           ))}
         </div>
-        <div className="divide-y divide-slate-100 overflow-hidden rounded-xl border border-slate-200 bg-white">
+        <div className="card divide-y divide-slate-100 overflow-hidden">
           {filtered.map((t) => (
-            <div key={t.id} className="flex items-center gap-3 px-4 py-2.5">
+            <div key={t.id} className="flex items-center gap-3 px-4 py-3">
               <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500">
                 <Icon name={iconFor(t.category)} size={16} />
               </span>
@@ -722,7 +723,7 @@ function JobVatTable({
 }) {
   const total = rows.reduce((s, r) => s + r.amount, 0)
   return (
-    <section className="rounded-xl border border-slate-200 bg-white p-5">
+    <section className="card p-4 sm:p-5">
       <div className="mb-4 flex items-baseline justify-between">
         <h2 className="text-sm font-semibold text-slate-800">{title}</h2>
         <span className="text-sm font-medium text-slate-500">{formatEUR(total)}</span>
@@ -730,26 +731,29 @@ function JobVatTable({
       {rows.length === 0 ? (
         <p className="py-6 text-center text-sm text-slate-400">Keine Aufträge.</p>
       ) : (
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="text-left text-xs text-slate-400">
-              <th className="pb-2 font-medium">Auftrag</th>
-              <th className="pb-2 text-right font-medium">Umsatz</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100">
-            {rows.map((r) => (
-              <tr key={r.job.id}>
-                <td className="min-w-0 max-w-0 truncate py-2 pr-3 text-slate-700">
-                  {r.job.name}
-                </td>
-                <td className="py-2 text-right font-medium tabular-nums text-slate-900">
-                  {formatEUR(r.amount)}
-                </td>
+        // Container scrollt notfalls selbst, damit nie die ganze Seite wandert
+        <div className="-mx-1 overflow-x-auto px-1">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-left text-xs text-slate-400">
+                <th className="pb-2 font-medium">Auftrag</th>
+                <th className="pb-2 text-right font-medium">Umsatz</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {rows.map((r) => (
+                <tr key={r.job.id}>
+                  <td className="min-w-0 max-w-0 truncate py-2.5 pr-3 text-slate-700">
+                    {r.job.name}
+                  </td>
+                  <td className="whitespace-nowrap py-2.5 text-right font-medium tabular-nums text-slate-900">
+                    {formatEUR(r.amount)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </section>
   )
@@ -773,11 +777,9 @@ function OpenItemsCard({
   const [open, setOpen] = useState(false)
   if (items.length === 0) {
     return (
-      <div className="rounded-xl border border-slate-200 bg-white p-4">
-        <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
-          {label}
-        </p>
-        <p className="mt-1 text-xl font-semibold tabular-nums text-slate-300">
+      <div className="card min-w-0 p-4">
+        <p className="stat-label">{label}</p>
+        <p className="mt-1 truncate text-xl font-semibold tabular-nums text-slate-300">
           {formatEUR(0)}
         </p>
         <p className="mt-0.5 text-xs text-slate-400">{hint}</p>
@@ -793,13 +795,14 @@ function OpenItemsCard({
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="flex w-full items-center justify-between p-4 text-left"
+        className="flex w-full items-center justify-between gap-3 p-4 text-left transition active:bg-white/40"
+        aria-expanded={open}
       >
-        <span>
+        <span className="min-w-0">
           <span className={`block text-xs font-medium uppercase tracking-wide ${colors.text}`}>
             {label}
           </span>
-          <span className={`mt-1 block text-xl font-semibold tabular-nums ${colors.text}`}>
+          <span className={`mt-1 block truncate text-xl font-semibold tabular-nums ${colors.text}`}>
             {formatEUR(sum)}
           </span>
           <span className={`mt-0.5 block text-xs ${colors.textSoft}`}>{hint}</span>
@@ -814,8 +817,8 @@ function OpenItemsCard({
         <div className="divide-y divide-white/60 border-t border-white/60 bg-white/60">
           {items.map((t) => (
             <div key={t.id} className="flex items-center gap-3 px-4 py-2.5">
-              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white text-slate-500">
-                <Icon name={iconFor(t.category)} size={14} />
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white text-slate-500">
+                <Icon name={iconFor(t.category)} size={15} />
               </span>
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-sm text-slate-700">
@@ -852,10 +855,10 @@ function FilterChip({
   return (
     <button
       onClick={onClick}
-      className={`flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition ${
+      className={`flex h-9 shrink-0 snap-start items-center gap-1.5 whitespace-nowrap rounded-lg border px-3 text-xs font-medium transition ${
         active
-          ? 'border-slate-900 bg-slate-900 text-white'
-          : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+          ? 'border-slate-900 bg-slate-900 text-white active:bg-slate-800'
+          : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50 active:bg-slate-100'
       }`}
     >
       {icon && <Icon name={iconFor(icon)} size={14} />}

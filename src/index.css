@@ -21,7 +21,110 @@ body {
   -webkit-tap-highlight-color: transparent;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica,
     Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
   overscroll-behavior-y: none;
+}
+
+/* Sperrt den Hintergrund, solange ein Sheet offen ist. Durch height:100% +
+   overflow-x:hidden scrollt hier faktisch #root – html und body sind nur der
+   Vollständigkeit halber dabei. Kein touch-action: none: das würde auch das
+   Scrollen im Sheet selbst unterbinden. */
+html.sheet-open,
+html.sheet-open body,
+html.sheet-open #root {
+  overflow: hidden;
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
+  /* Untergrenze 16px: darunter zoomt iOS beim Fokus in das Feld hinein.
+     Utilities wie text-sm stechen diese Regel aus – solche Felder sind
+     deshalb zusätzlich im Markup auf text-base gesetzt. */
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}
+
+@layer components {
+  /* Einheitliche Karte: Radius, Rahmen und Erhebung kommen aus einer Quelle.
+     Innenabstand bleibt bewusst beim Aufrufer (p-3 / p-4 / p-5). */
+  .card {
+    @apply rounded-xl border border-slate-200 bg-white shadow-card;
+  }
+
+  /* Eingabefeld – ergibt mit py-2.5 + 16px Text exakt 44px Höhe */
+  .field {
+    @apply w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2.5
+      text-base text-slate-900 outline-none transition
+      focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10;
+  }
+
+  .btn-primary {
+    @apply min-h-touch rounded-lg bg-slate-900 px-4 py-2.5 text-base font-medium
+      text-white transition hover:bg-slate-800 active:scale-[0.99]
+      disabled:opacity-60 disabled:active:scale-100;
+  }
+
+  .btn-secondary {
+    @apply min-h-touch rounded-lg border border-slate-200 bg-white px-4 py-2.5
+      text-sm font-medium text-slate-700 transition hover:bg-slate-50
+      active:bg-slate-100 disabled:opacity-50;
+  }
+
+  /* Quadratischer Icon-Button, auf Touch 44px, ab sm kompakter */
+  .icon-btn {
+    @apply flex h-11 w-11 items-center justify-center rounded-lg text-slate-500
+      transition hover:bg-slate-100 active:bg-slate-200 sm:h-9 sm:w-9;
+  }
+
+  /* Wiederkehrendes Kennzahl-Label über den Beträgen */
+  .stat-label {
+    @apply text-xs font-medium uppercase tracking-wide text-slate-400;
+  }
+
+  /* Antippbare Listenzeile inkl. Touch-Rückmeldung */
+  .row-tap {
+    @apply transition hover:bg-slate-50 active:bg-slate-100;
+  }
+
+  /* Gemeinsamer Rahmen für AddEditSheet und JobSheet */
+  .sheet-backdrop {
+    @apply fixed inset-0 z-50 flex items-end justify-center overflow-x-hidden
+      bg-slate-900/40 backdrop-blur-sm sm:items-center sm:p-4;
+  }
+
+  .sheet-panel {
+    @apply flex w-full max-w-lg flex-col overflow-hidden rounded-t-2xl
+      border-slate-200 bg-white shadow-sheet sm:rounded-2xl sm:border;
+    /* dvh, damit das Sheet nicht unter Safaris ausgefahrener Leiste endet */
+    max-height: 92vh;
+    max-height: 92dvh;
+  }
+
+  .sheet-body {
+    @apply min-h-0 flex-1 overflow-y-auto overscroll-contain px-5;
+  }
+
+  .sheet-handle {
+    @apply mx-auto mb-3 h-1 w-9 shrink-0 rounded-full bg-slate-200 sm:hidden;
+  }
+}
+
+@layer utilities {
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 /* Zahlen-Eingabe: Spinner ausblenden */

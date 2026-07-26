@@ -81,33 +81,29 @@ export default function EntriesView({
 
   return (
     <div className="space-y-5">
-      {/* Stat-Kacheln */}
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <div className="rounded-xl border border-slate-200 bg-white p-4">
-          <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
-            Saldo
-          </p>
+      {/* Kennzahlen – auf dem Handy führt der Saldo, darunter die Details.
+          Drei gleich große Karten untereinander kosteten dort eine halbe
+          Bildschirmhöhe, bevor überhaupt Inhalt kam. */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+        <div className="card col-span-2 min-w-0 p-4 sm:col-span-1">
+          <p className="stat-label">Saldo</p>
           <p
-            className={`mt-1 text-2xl font-semibold tracking-tight ${
+            className={`mt-1 truncate text-3xl font-semibold tracking-tight tabular-nums sm:text-2xl ${
               balance >= 0 ? 'text-slate-900' : 'text-rose-600'
             }`}
           >
             {formatEURSigned(balance)}
           </p>
         </div>
-        <div className="rounded-xl border border-slate-200 bg-white p-4">
-          <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
-            Einnahmen
-          </p>
-          <p className="mt-1 text-2xl font-semibold tracking-tight text-emerald-600">
+        <div className="card min-w-0 p-4">
+          <p className="stat-label">Einnahmen</p>
+          <p className="mt-1 truncate text-xl font-semibold tracking-tight tabular-nums text-emerald-600 sm:text-2xl">
             {formatEUR(income)}
           </p>
         </div>
-        <div className="rounded-xl border border-slate-200 bg-white p-4">
-          <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
-            Ausgaben
-          </p>
-          <p className="mt-1 text-2xl font-semibold tracking-tight text-rose-600">
+        <div className="card min-w-0 p-4">
+          <p className="stat-label">Ausgaben</p>
+          <p className="mt-1 truncate text-xl font-semibold tracking-tight tabular-nums text-rose-600 sm:text-2xl">
             {formatEUR(expense)}
           </p>
         </div>
@@ -121,9 +117,7 @@ export default function EntriesView({
           {jobs.length > 0 && (
             <div>
               <div className="mb-2 flex items-center justify-between">
-                <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
-                  Aufträge
-                </p>
+                <p className="stat-label">Aufträge</p>
                 <p className="text-xs text-slate-400">
                   {filteredJobs.length} von {jobs.length}
                 </p>
@@ -138,7 +132,7 @@ export default function EntriesView({
                     value={jobSearch}
                     onChange={(e) => setJobSearch(e.target.value)}
                     placeholder="Auftrag suchen …"
-                    className="w-full rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm text-slate-900 outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10"
+                    className="field border-slate-200 pl-9 pr-3"
                   />
                 </div>
                 <div className="relative shrink-0">
@@ -146,10 +140,10 @@ export default function EntriesView({
                     type="button"
                     onClick={() => setStatusMenuOpen((o) => !o)}
                     aria-label="Aufträge filtern"
-                    className={`flex h-[38px] w-[38px] items-center justify-center rounded-lg border transition ${
+                    className={`flex h-11 w-11 items-center justify-center rounded-lg border transition ${
                       jobStatus !== 'all'
-                        ? 'border-slate-900 bg-slate-900 text-white'
-                        : 'border-slate-200 bg-white text-slate-500 hover:bg-slate-50'
+                        ? 'border-slate-900 bg-slate-900 text-white active:bg-slate-800'
+                        : 'border-slate-200 bg-white text-slate-500 hover:bg-slate-50 active:bg-slate-100'
                     }`}
                   >
                     <Icon name="filter" size={16} />
@@ -157,10 +151,17 @@ export default function EntriesView({
                   {statusMenuOpen && (
                     <>
                       <div
-                        className="fixed inset-0 z-40"
+                        className="fixed inset-0 z-40 bg-slate-900/20 sm:bg-transparent"
                         onClick={() => setStatusMenuOpen(false)}
                       />
-                      <div className="absolute right-0 top-11 z-50 w-40 overflow-hidden rounded-xl border border-slate-200 bg-white py-1 shadow-lg">
+                      {/* Handy: Bottom-Sheet. Ab sm: Dropdown wie bisher. */}
+                      <div
+                        className="fixed inset-x-0 bottom-0 z-50 overflow-hidden rounded-t-2xl border-t border-slate-200 bg-white pt-2 shadow-sheet sm:absolute sm:inset-x-auto sm:bottom-auto sm:right-0 sm:top-11 sm:w-40 sm:rounded-xl sm:border sm:pt-1 sm:shadow-lg"
+                        style={{
+                          paddingBottom: 'calc(0.5rem + env(safe-area-inset-bottom))',
+                        }}
+                      >
+                        <div className="mx-auto mb-2 h-1 w-9 rounded-full bg-slate-200 sm:hidden" />
                         <StatusMenuItem
                           label="Alle"
                           active={jobStatus === 'all'}
@@ -195,7 +196,7 @@ export default function EntriesView({
                   Kein Auftrag gefunden.
                 </p>
               ) : (
-                <div className="divide-y divide-slate-100 overflow-hidden rounded-xl border border-slate-200 bg-white">
+                <div className="card divide-y divide-slate-100 overflow-hidden">
                   {filteredJobs.map((job) => {
                     const p = jobProfits.get(job.id) ?? { income: 0, expense: 0 }
                     const profit = p.income - p.expense
@@ -203,7 +204,7 @@ export default function EntriesView({
                       <button
                         key={job.id}
                         onClick={() => onOpenJob(job)}
-                        className="flex w-full items-center gap-3 px-4 py-3 text-left transition hover:bg-slate-50"
+                        className="row-tap flex min-h-touch w-full items-center gap-3 px-4 py-3.5 text-left"
                       >
                         <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-600">
                           <Icon name="folder" size={18} />
@@ -238,15 +239,13 @@ export default function EntriesView({
           {/* Eigenständige Buchungen */}
           {groups.map(([date, items]) => (
             <div key={date}>
-              <p className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-400">
-                {formatDate(date)}
-              </p>
-              <div className="divide-y divide-slate-100 overflow-hidden rounded-xl border border-slate-200 bg-white">
+              <p className="stat-label mb-2">{formatDate(date)}</p>
+              <div className="card divide-y divide-slate-100 overflow-hidden">
                 {items.map((t) => (
                   <button
                     key={t.id}
                     onClick={() => onEdit(t)}
-                    className="flex w-full items-center gap-3 px-4 py-3 text-left transition hover:bg-slate-50"
+                    className="row-tap flex min-h-touch w-full items-center gap-3 px-4 py-3.5 text-left"
                   >
                     <span
                       className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${
@@ -299,19 +298,19 @@ function StatusMenuItem({
     <button
       type="button"
       onClick={onClick}
-      className={`flex w-full items-center justify-between px-4 py-2 text-left text-sm transition hover:bg-slate-50 ${
+      className={`flex min-h-touch w-full items-center justify-between px-4 py-3 text-left text-base transition hover:bg-slate-50 active:bg-slate-100 sm:py-2 sm:text-sm ${
         active ? 'font-medium text-slate-900' : 'text-slate-600'
       }`}
     >
       {label}
-      {active && <Icon name="check" size={14} />}
+      {active && <Icon name="check" size={16} />}
     </button>
   )
 }
 
 function EmptyState() {
   return (
-    <div className="flex flex-col items-center rounded-xl border border-dashed border-slate-200 bg-white py-16 text-center">
+    <div className="flex flex-col items-center rounded-xl border border-dashed border-slate-200 bg-white px-6 py-14 text-center">
       <span className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-slate-400">
         <Icon name="folder" size={22} />
       </span>
