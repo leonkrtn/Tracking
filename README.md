@@ -10,9 +10,9 @@ Tailwind, Daten in **Supabase**.
   Datum, Notiz)
 - **MwSt**: pro Buchung Netto-Betrag + Satz (0 % / 19 %) eingeben,
   Brutto wird automatisch berechnet
-- Kategorien für den Werkstattbetrieb (Arbeitslohn, Ersatzteile, Reifen,
-  TÜV/AU, Werkzeug, Miete, Löhne, Versicherung, Kfz/Fuhrpark, …) – eigene
-  Kategorien zusätzlich anlegbar
+- Kategorien: **Arbeitszeit, Material, Sonstiges** – eigene Kategorien
+  zusätzlich anlegbar. Buchungen aus der Zeit der früheren, längeren Liste
+  behalten ihre Kategorie
 - **Auswertung**: Saldo des Monats, Ausgaben nach Kategorie (Diagramm),
   6-Monats-Verlauf, MwSt-Übersicht (vereinnahmt / gezahlt / Zahllast),
   filterbare Liste

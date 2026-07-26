@@ -106,8 +106,13 @@ export default function AddEditSheet({
 
   const catList = useMemo(() => {
     const own = categories.filter((c) => c.kind === kind).map((c) => c.name)
-    return Array.from(new Set([...DEFAULT_CATEGORIES[kind], ...own]))
-  }, [categories, kind])
+    // Buchungen aus der Zeit der längeren Kategorienliste behalten ihre
+    // Kategorie beim Bearbeiten – sonst würde sie hier stillschweigend
+    // geleert und müsste neu gewählt werden.
+    const bestehend =
+      existing && existing.kind === kind ? [existing.category] : []
+    return Array.from(new Set([...DEFAULT_CATEGORIES[kind], ...own, ...bestehend]))
+  }, [categories, kind, existing])
 
   useEffect(() => {
     if (category && !catList.includes(category)) setCategory('')
