@@ -30,28 +30,34 @@ Tailwind, Daten in **Supabase**.
 Das Supabase-Projekt **„Tracking"** ist bereits im Code hinterlegt
 (`src/lib/supabase.ts`).
 
+Das Schema liegt als Migration in
+[`supabase/migrations/`](supabase/migrations/). Wer das Repo in Supabase
+verbunden hat, bekommt sie beim Push auf den Produktions-Branch
+automatisch angewendet – sonst per Hand:
+
 ### Neues / leeres Projekt
 
 1. Supabase → **SQL Editor** → **New query**
-2. Inhalt von [`supabase/schema.sql`](supabase/schema.sql) einfügen → **Run**
-   – das ist der komplette aktuelle Stand. Die Dateien `002_*.sql` …
-   `006_*.sql` **nicht** zusätzlich ausführen.
+2. Inhalt von
+   [`supabase/migrations/20260726120000_init.sql`](supabase/migrations/20260726120000_init.sql)
+   einfügen → **Run**. Das ist der komplette Stand; in
+   `supabase/legacy/` nichts zusätzlich ausführen.
 3. **Authentication** → **Sign In / Providers** → **Email** → **„Confirm
    email"** ausschalten → **Save**
 4. In der App „Konto anlegen" → Benutzername + Passwort
 
 ### Bestehendes Projekt auf den aktuellen Stand bringen
 
-Die noch fehlenden Schritte einzeln im SQL Editor ausführen (alle
-idempotent, mehrfaches Ausführen schadet nicht):
+Läuft schon eine ältere Version, ziehen die Einzelschritte in
+[`supabase/legacy/`](supabase/legacy/) sie nach – Reihenfolge und
+Voraussetzungen stehen dort im README.
 
-| Datei | Inhalt |
-|---|---|
-| [`002_add_vat_rate.sql`](supabase/002_add_vat_rate.sql) | Spalte `vat_rate` |
-| [`003_add_jobs.sql`](supabase/003_add_jobs.sql) | Tabelle `jobs` + `transactions.job_id` |
-| [`004_add_job_dates.sql`](supabase/004_add_job_dates.sql) | `start_date` / `end_date` |
-| [`005_add_paid.sql`](supabase/005_add_paid.sql) | Spalte `paid` |
-| [`006_optimize_rls.sql`](supabase/006_optimize_rls.sql) | schnellere RLS-Policies + Index auf `jobs.user_id` |
+### Künftige Schema-Änderungen
+
+Neue Datei in `supabase/migrations/` anlegen (Name:
+`YYYYMMDDHHMMSS_beschreibung.sql`), nie die bestehende ändern und nichts
+mehr direkt im SQL-Editor „nebenbei" ausführen – sonst laufen Repo und
+Datenbank auseinander.
 
 ### Umzug in einen anderen Supabase-Account
 

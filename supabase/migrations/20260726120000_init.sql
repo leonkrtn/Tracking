@@ -1,16 +1,20 @@
 -- ============================================================
---  Meister-Kasse – komplettes Datenbank-Schema (aktueller Stand)
+--  Meister-Kasse – Basis-Migration (kompletter aktueller Stand)
 --
---  NEUES / LEERES PROJEKT (auch beim Umzug in einen anderen
---  Supabase-Account): Nur DIESE Datei ausführen.
---    Supabase → SQL Editor → New query → einfügen → Run
---  Die Dateien 002_*.sql … 006_*.sql sind hier bereits enthalten und
---  dürfen NICHT zusätzlich ausgeführt werden – sie sind nur für ein
---  bestehendes Projekt gedacht, das noch auf einem älteren Stand ist.
+--  Diese Datei ist die einzige Quelle der Wahrheit für das Schema.
+--  Sie wird angewendet
+--    * automatisch von der Supabase-GitHub-Integration bzw. über
+--      `supabase db push`, oder
+--    * per Hand: Inhalt in SQL Editor → New query → Run.
 --
---  Schritt-für-Schritt-Anleitung für den Umzug: supabase/UMZUG.md
+--  Die alten Einzelschritte in supabase/legacy/ sind hier vollständig
+--  enthalten und dürfen NICHT zusätzlich ausgeführt werden.
+--
+--  Umzug in einen anderen Account: supabase/UMZUG.md
 --
 --  Das Skript ist idempotent und kann ohne Schaden mehrfach laufen.
+--  Künftige Änderungen kommen als NEUE Datei in supabase/migrations/,
+--  nicht als Änderung an dieser hier.
 -- ============================================================
 
 -- ---------- Tabelle: Aufträge ----------

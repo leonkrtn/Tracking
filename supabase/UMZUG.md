@@ -1,19 +1,20 @@
 # Umzug in einen anderen Supabase-Account
 
 Kurzantwort auf die Frage „kann ich einfach die Migrationen nacheinander
-ausführen?" → **Nein, nicht nacheinander – nur `schema.sql`.**
+ausführen?" → **Nein, nicht nacheinander – es ist genau eine Migration:**
+[`migrations/20260726120000_init.sql`](migrations/20260726120000_init.sql).
 
-`supabase/schema.sql` ist bereits der komplette aktuelle Stand
-(inkl. `vat_rate`, `jobs`, Start-/Enddatum, `job_id`, `paid`). Die
-Dateien `002_*.sql` … `006_*.sql` sind Nachrüst-Schritte für ein
+Die Datei ist der komplette aktuelle Stand (inkl. `vat_rate`, `jobs`,
+Start-/Enddatum, `job_id`, `paid`). Die alten Einzelschritte liegen in
+[`legacy/`](legacy/) und sind reine Nachrüst-Schritte für ein
 **bestehendes** Projekt. Auf einem leeren Projekt würde `002` sogar
 fehlschlagen, weil es `public.transactions` ändert – die Tabelle gibt es
 zu dem Zeitpunkt noch nicht.
 
 Zweiter wichtiger Punkt: **Ein Datenbank-Schema ist nicht der ganze
-Umzug.** Der Login-Benutzer liegt in `auth.users` und wird von
-`schema.sql` nicht angelegt. Ohne diesen Schritt startet die App im
-neuen Projekt mit leerem Login.
+Umzug.** Der Login-Benutzer liegt in `auth.users` und wird von der
+Migration nicht angelegt. Ohne diesen Schritt startet die App im neuen
+Projekt mit leerem Login.
 
 ---
 
@@ -21,7 +22,7 @@ neuen Projekt mit leerem Login.
 
 | | kommt mit |
 |---|---|
-| Tabellen, Spalten, Indizes, RLS-Policies | ✅ über `schema.sql` |
+| Tabellen, Spalten, Indizes, RLS-Policies | ✅ über die Migration |
 | Login-Benutzer (`auth.users`) | ❌ neu registrieren |
 | Auth-Einstellung „Confirm email" | ❌ neu setzen |
 | Buchungen / Aufträge / eigene Kategorien | ❌ manuell (siehe unten) |
@@ -37,9 +38,15 @@ neuen Projekt mit leerem Login.
    Region am besten wieder in der EU (`eu-central-1` oder
    `eu-north-1`). Das DB-Passwort sicher notieren.
 
-2. **Schema anlegen**: SQL Editor → New query → kompletten Inhalt von
-   [`schema.sql`](schema.sql) einfügen → **Run**.
-   Nur diese eine Datei – `002` bis `006` **nicht** zusätzlich.
+2. **Schema anlegen** – zwei Wege:
+
+   * Ist das Repo in Supabase verbunden (Integrations → GitHub), passiert
+     das beim Push auf den Produktions-Branch automatisch. Voraussetzung:
+     `supabase/config.toml` existiert und die Migration liegt in
+     `supabase/migrations/` – beides ist im Repo vorhanden.
+   * Oder per Hand: SQL Editor → New query → Inhalt von
+     [`migrations/20260726120000_init.sql`](migrations/20260726120000_init.sql)
+     einfügen → **Run**. In `legacy/` nichts zusätzlich ausführen.
 
 3. **Authentication → Sign In / Providers → Email**:
    „Confirm email" **ausschalten** → Save.
@@ -162,25 +169,40 @@ select
 
 ---
 
-## Für die Zukunft: Migrationen sauber führen
+## Migrationen sauber führen
 
-Aktuell wurde alles per Hand im SQL-Editor ausgeführt – Supabase kennt
-deshalb **keine** Migrations-Historie
-(`supabase_migrations.schema_migrations` ist leer). Dadurch gibt es
-keine Prüfung, welcher Stand wo läuft; `schema.sql` und die
-Einzelschritte müssen manuell synchron gehalten werden.
+Im **alten** Projekt wurde alles per Hand im SQL-Editor ausgeführt.
+Supabase kennt dort deshalb **keine** Migrations-Historie
+(`supabase_migrations.schema_migrations` ist leer) – es gibt also keine
+Prüfung, welcher Stand wo läuft.
 
-Wer das aufräumen will, richtet die Supabase-CLI ein:
+Das Repo ist jetzt auf das Layout umgestellt, das die Supabase-CLI und
+die GitHub-Integration erwarten:
+
+```
+supabase/
+  config.toml                        ← macht das Verzeichnis erkennbar
+  migrations/
+    20260726120000_init.sql          ← Schema, einzige Quelle der Wahrheit
+  legacy/                            ← alte Handschritte, nur Referenz
+```
+
+**Wichtig:** Die Integration liest ausschließlich
+`supabase/migrations/` und nur Dateien mit dem Namensmuster
+`YYYYMMDDHHMMSS_beschreibung.sql`. Namen wie `schema.sql` oder
+`002_add_vat_rate.sql` werden ignoriert – deshalb der Umbau.
+
+Ab jetzt gilt: **neue Änderung = neue Datei**, bestehende Migrationen
+nie nachträglich ändern (sie sind in der Ziel-DB schon verbucht):
 
 ```bash
 npm i -D supabase
-npx supabase init
 npx supabase link --project-ref <neuer-ref>
-# Änderungen künftig als Datei anlegen …
-npx supabase migration new beschreibung
-# … und einspielen:
-npx supabase db push
+npx supabase migration new beschreibung   # erzeugt die Datei
+npx supabase db push                      # spielt sie ein
 ```
 
-Danach gilt: neue Änderung = neue Datei in `supabase/migrations/`,
-nie mehr direkt im SQL-Editor.
+Wer die GitHub-Integration nutzt, braucht `db push` nicht – dort reicht
+der Push auf den Produktions-Branch. Der Branch muss in Supabase unter
+**Integrations → GitHub** eingestellt sein; aktuell ist der
+Standard-Branch des Repos `leon/eager-goodall-ootb3b`.

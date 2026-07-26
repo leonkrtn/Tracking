@@ -1,0 +1,11 @@
+# Konfiguration für die Supabase-CLI und die GitHub-Integration.
+#
+# Diese Datei muss existieren, damit Supabase beim Verbinden des Repos
+# das Verzeichnis als Supabase-Projekt erkennt und die Migrationen aus
+# supabase/migrations/ anwendet.
+#
+# project_id ist nur ein lokaler Name – nicht die Projekt-Ref. Die
+# Verknüpfung mit dem echten Projekt passiert über die GitHub-Integration
+# bzw. über `supabase link --project-ref <ref>`.
+
+project_id = "meister-kasse"
