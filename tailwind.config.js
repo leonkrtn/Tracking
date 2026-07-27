@@ -1,3 +1,5 @@
+import containerQueries from '@tailwindcss/container-queries'
+
 /** @type {import('tailwindcss').Config} */
 export default {
   content: ['./index.html', './src/**/*.{ts,tsx}'],
@@ -25,5 +27,7 @@ export default {
       },
     },
   },
-  plugins: [],
+  // Die Chart-Komponenten skalieren ihre Mittelbeschriftung über
+  // Container-Queries (@container, cqw-Einheiten).
+  plugins: [containerQueries],
 }

@@ -20,6 +20,9 @@ Tailwind, Daten in **Supabase**.
 - **Login mit Benutzername + Passwort** (ein Benutzer genügt)
 - **Export** als Excel (`.xlsx`) oder CSV, jeweils inkl. Netto/MwSt/Brutto
 - Helles, cleanes Design, eigenes Icon-Set (keine Emojis)
+- Diagramme von [Bklit UI](https://github.com/bklit/bklit-ui) (MIT), als
+  shadcn-Registry in `src/components/charts/` übernommen – Details und
+  eigene Anpassungen stehen dort im README
 - **Desktop-Ansicht** mit Seitenleiste + **Handy-Ansicht** mit Bottom-Tabs
 - **PWA**: auf dem Homescreen installierbar
 

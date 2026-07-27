@@ -1,14 +1,14 @@
 import { useMemo, useState } from 'react'
-import {
-  Bar,
-  BarChart,
-  Cell,
-  Pie,
-  PieChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-} from 'recharts'
+// Diagramme: Bklit UI (MIT), als shadcn-Registry nach src/components/charts
+// übernommen – siehe https://github.com/bklit/bklit-ui
+import { BarChart } from './charts/bar-chart'
+import { Bar } from './charts/bar'
+import { BarXAxis } from './charts/bar-x-axis'
+import { Grid } from './charts/grid'
+import { ChartTooltip } from './charts/tooltip'
+import { PieChart } from './charts/pie-chart'
+import { PieSlice } from './charts/pie-slice'
+import { PieCenter } from './charts/pie-center'
 import type { Job, Transaction } from '../lib/types'
 import { formatDate, formatEUR, formatEURSigned, formatMonth, monthKeyOf, shiftMonth } from '../lib/format'
 import { iconFor } from '../lib/categories'
@@ -48,6 +48,19 @@ export default function ReportsView({ transactions, jobs, month }: Props) {
   }, [monthTx])
 
   const totalExpense = byCategory.reduce((s, c) => s + c.value, 0)
+
+  // Ausgewähltes Segment – verbindet Diagramm und Legende miteinander
+  const [aktivesSegment, setAktivesSegment] = useState<number | null>(null)
+
+  const pieData = useMemo(
+    () =>
+      byCategory.map((c, i) => ({
+        label: c.name,
+        value: c.value,
+        color: PIE_COLORS[i % PIE_COLORS.length],
+      })),
+    [byCategory],
+  )
 
   const trend = useMemo(() => {
     const out: { label: string; einnahme: number; ausgabe: number }[] = []
@@ -333,38 +346,47 @@ export default function ReportsView({ transactions, jobs, month }: Props) {
             </p>
           ) : (
             <div className="flex flex-col items-center gap-4 sm:flex-row sm:gap-5">
-              <div className="h-44 w-44 shrink-0 sm:h-44 sm:w-44">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={byCategory}
-                      dataKey="value"
-                      nameKey="name"
-                      innerRadius={44}
-                      outerRadius={78}
-                      paddingAngle={2}
-                      stroke="none"
-                      isAnimationActive={false}
-                    >
-                      {byCategory.map((_, i) => (
-                        <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip
-                      formatter={(v: number) => formatEUR(v)}
-                      contentStyle={{
-                        borderRadius: 10,
-                        border: '1px solid #e2e8f0',
-                        fontSize: 13,
-                        boxShadow: '0 4px 12px rgba(0,0,0,0.06)',
-                      }}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
+              {/* Bklit UI: Segmente fahren beim Zeigen heraus, das ausgewählte
+                  bleibt hervorgehoben, der Rest blendet zurück. */}
+              <div className="h-48 w-48 shrink-0">
+                <PieChart
+                  data={pieData}
+                  innerRadius={46}
+                  padAngle={0.03}
+                  cornerRadius={4}
+                  hoverOffset={8}
+                  hoveredIndex={aktivesSegment}
+                  onHoverChange={setAktivesSegment}
+                  className="h-full w-full"
+                >
+                  {pieData.map((_, i) => (
+                    <PieSlice key={i} index={i} hoverEffect="translate" />
+                  ))}
+                  {/* Zahl zählt beim Wechsel animiert hoch (NumberFlow) */}
+                  <PieCenter
+                    defaultLabel="Gesamt"
+                    formatOptions={{
+                      style: 'currency',
+                      currency: 'EUR',
+                      maximumFractionDigits: 0,
+                    }}
+                    valueClassName="font-semibold tabular-nums leading-none text-slate-900 text-[clamp(0.75rem,20cqw,1.5rem)]"
+                    labelClassName="max-w-full truncate leading-tight text-slate-400 text-[clamp(0.625rem,9cqw,0.75rem)]"
+                  />
+                </PieChart>
               </div>
               <ul className="w-full space-y-2.5">
                 {byCategory.map((c, i) => (
-                  <li key={c.name} className="flex items-center gap-2.5 text-sm">
+                  <li
+                    key={c.name}
+                    onMouseEnter={() => setAktivesSegment(i)}
+                    onMouseLeave={() => setAktivesSegment(null)}
+                    className={`flex items-center gap-2.5 rounded-lg px-1 py-0.5 text-sm transition ${
+                      aktivesSegment != null && aktivesSegment !== i
+                        ? 'opacity-40'
+                        : ''
+                    }`}
+                  >
                     <span
                       className="h-2.5 w-2.5 shrink-0 rounded-full"
                       style={{ background: PIE_COLORS[i % PIE_COLORS.length] }}
@@ -393,29 +415,34 @@ export default function ReportsView({ transactions, jobs, month }: Props) {
           </h2>
           {/* Auf dem Handy etwas höher – bei 176px waren die Balken kaum lesbar */}
           <div className="h-52 w-full sm:h-44">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={trend} barGap={2}>
-                <XAxis
-                  dataKey="label"
-                  tickLine={false}
-                  axisLine={false}
-                  tick={{ fontSize: 12, fill: '#94a3b8' }}
-                  dy={4}
-                />
-                <Tooltip
-                  formatter={(v: number) => formatEUR(v)}
-                  cursor={{ fill: 'rgba(148,163,184,0.08)' }}
-                  contentStyle={{
-                    borderRadius: 10,
-                    border: '1px solid #e2e8f0',
-                    fontSize: 13,
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.06)',
-                  }}
-                />
-                <Bar dataKey="einnahme" name="Einnahmen" fill="#059669" radius={[3, 3, 0, 0]} isAnimationActive={false} />
-                <Bar dataKey="ausgabe" name="Ausgaben" fill="#e11d48" radius={[3, 3, 0, 0]} isAnimationActive={false} />
-              </BarChart>
-            </ResponsiveContainer>
+            <BarChart
+              data={trend}
+              xDataKey="label"
+              // Die Monatsbeschriftung sitzt 12px über dem unteren Rand –
+              // darunter braucht sie noch Platz für die Zeilenhöhe.
+              margin={{ top: 8, right: 4, bottom: 36, left: 4 }}
+              className="h-full w-full"
+            >
+              <Grid horizontal vertical={false} />
+              <Bar dataKey="einnahme" fill="#059669" lineCap={3} />
+              <Bar dataKey="ausgabe" fill="#e11d48" lineCap={3} />
+              <BarXAxis />
+              <ChartTooltip
+                showDatePill={false}
+                rows={(point) => [
+                  {
+                    label: 'Einnahmen',
+                    value: formatEUR(Number(point.einnahme ?? 0)),
+                    color: '#059669',
+                  },
+                  {
+                    label: 'Ausgaben',
+                    value: formatEUR(Number(point.ausgabe ?? 0)),
+                    color: '#e11d48',
+                  },
+                ]}
+              />
+            </BarChart>
           </div>
           <div className="mt-3 flex items-center justify-center gap-5 text-xs text-slate-500">
             <span className="flex items-center gap-1.5">

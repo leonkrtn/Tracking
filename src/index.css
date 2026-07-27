@@ -4,6 +4,40 @@
 
 :root {
   color-scheme: light;
+
+  /* Farbwerte für die Bklit-UI-Diagramme (src/components/charts).
+     Bewusst auf die bestehende helle Slate-Optik abgestimmt. */
+  --foreground: #0f172a;
+  --border: #e2e8f0;
+  --color-zinc-500: #64748b;
+
+  --chart-background: #ffffff;
+  --chart-foreground: #0f172a;
+  --chart-foreground-muted: #94a3b8;
+  --chart-grid: #e2e8f0;
+  --chart-label: #94a3b8;
+  --chart-line-primary: #0f172a;
+  --chart-line-secondary: #64748b;
+  --chart-crosshair: #cbd5e1;
+
+  --chart-tooltip-background: #ffffff;
+  --chart-marker-background: #ffffff;
+  --chart-marker-foreground: #0f172a;
+  --chart-marker-border: #e2e8f0;
+  --chart-marker-badge-background: #0f172a;
+  --chart-marker-badge-foreground: #ffffff;
+  --chart-segment-background: #f1f5f9;
+  --chart-segment-line: #e2e8f0;
+  --chart-brush-border: #cbd5e1;
+  --chart-indicator-color: #0f172a;
+  --chart-indicator-secondary-color: #64748b;
+
+  /* Kategorie-Palette – dieselbe ruhige Abstufung wie bisher */
+  --chart-1: #0f172a;
+  --chart-2: #334155;
+  --chart-3: #475569;
+  --chart-4: #64748b;
+  --chart-5: #94a3b8;
 }
 
 html,
