@@ -4,7 +4,6 @@ import { supabase } from './lib/supabase'
 import { useStore } from './lib/useStore'
 import { currentMonthKey } from './lib/format'
 import type { Job, JobInput, Transaction, TransactionInput } from './lib/types'
-import { exportCSV, exportExcel } from './lib/exportData'
 import Auth from './components/Auth'
 import EntriesView from './components/EntriesView'
 // Die Diagramm-Bibliothek wird erst geladen, wenn die Auswertung geöffnet
@@ -12,6 +11,7 @@ import EntriesView from './components/EntriesView'
 const ReportsView = lazy(() => import('./components/ReportsView'))
 import TaxView from './components/TaxView'
 import AddEditSheet from './components/AddEditSheet'
+import MoreMenu from './components/MoreMenu'
 import JobSheet from './components/JobSheet'
 import MonthNav from './components/MonthNav'
 import Icon, { type IconName } from './components/Icon'
@@ -143,7 +143,10 @@ function Main({ userId }: { userId: string }) {
             </h1>
             <div className="flex shrink-0 items-center gap-1 sm:gap-2 md:gap-3">
               <MonthNav month={month} onChange={setMonth} />
-              <MoreMenu store={store} />
+              <MoreMenu
+                transactions={store.transactions}
+                onSignOut={() => supabase.auth.signOut()}
+              />
             </div>
           </div>
         </header>
@@ -331,79 +334,3 @@ function TabButton({
   )
 }
 
-function MoreMenu({ store }: { store: ReturnType<typeof useStore> }) {
-  const [open, setOpen] = useState(false)
-  return (
-    <div className="relative">
-      <button
-        onClick={() => setOpen((o) => !o)}
-        className="flex h-11 w-11 items-center justify-center rounded-lg border border-slate-200 text-slate-600 transition hover:bg-slate-50 active:bg-slate-100 sm:h-9 sm:w-9"
-        aria-label="Menü"
-      >
-        <Icon name="more" size={18} />
-      </button>
-      {open && (
-        <>
-          <div
-            className="fixed inset-0 z-40 bg-slate-900/20 sm:bg-transparent"
-            onClick={() => setOpen(false)}
-          />
-          {/* Handy: Bottom-Sheet mit großen Zielen. Ab sm: Dropdown wie bisher. */}
-          <div
-            className="fixed inset-x-0 bottom-0 z-50 overflow-hidden rounded-t-2xl border-t border-slate-200 bg-white pt-2 shadow-sheet sm:absolute sm:inset-x-auto sm:bottom-auto sm:right-0 sm:top-11 sm:w-60 sm:rounded-xl sm:border sm:pt-1 sm:shadow-lg"
-            style={{ paddingBottom: 'calc(0.5rem + env(safe-area-inset-bottom))' }}
-          >
-            <div className="mx-auto mb-2 h-1 w-9 rounded-full bg-slate-200 sm:hidden" />
-            <MenuItem
-              icon="download"
-              label="Als Excel exportieren"
-              onClick={() => {
-                exportExcel(store.transactions)
-                setOpen(false)
-              }}
-            />
-            <MenuItem
-              icon="download"
-              label="Als CSV exportieren"
-              onClick={() => {
-                exportCSV(store.transactions)
-                setOpen(false)
-              }}
-            />
-            <div className="my-1 border-t border-slate-100" />
-            <MenuItem
-              icon="logout"
-              label="Abmelden"
-              danger
-              onClick={() => supabase.auth.signOut()}
-            />
-          </div>
-        </>
-      )}
-    </div>
-  )
-}
-
-function MenuItem({
-  icon,
-  label,
-  onClick,
-  danger,
-}: {
-  icon: IconName
-  label: string
-  onClick: () => void
-  danger?: boolean
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={`flex min-h-touch w-full items-center gap-3 px-4 py-3 text-left text-base transition hover:bg-slate-50 active:bg-slate-100 sm:py-2.5 sm:text-sm ${
-        danger ? 'text-rose-600' : 'text-slate-700'
-      }`}
-    >
-      <Icon name={icon} size={17} />
-      {label}
-    </button>
-  )
-}

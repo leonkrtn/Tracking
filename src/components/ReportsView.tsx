@@ -316,113 +316,6 @@ export default function ReportsView({ transactions, jobs, month }: Props) {
         )}
       </div>
 
-      {hasVat && (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-          <KpiCard
-            label="Vereinnahmte MwSt"
-            value={formatEUR(vat.vereinnahmt)}
-            tone="slate"
-          />
-          <KpiCard
-            label="Gezahlte MwSt"
-            value={formatEUR(vat.gezahlt)}
-            tone="slate"
-          />
-          <KpiCard
-            label="Zahllast (Saldo)"
-            value={formatEURSigned(vat.zahllast)}
-            tone={vat.zahllast >= 0 ? 'slate' : 'rose'}
-            className="col-span-2 sm:col-span-1"
-          />
-        </div>
-      )}
-
-      {revenueByVat.rows.length > 0 && (
-        <section className="card p-4 sm:p-5">
-          <div className="mb-4 flex items-baseline justify-between">
-            <h2 className="text-sm font-semibold text-slate-800">
-              Umsatz nach Steuersatz
-            </h2>
-            <span className="text-sm font-medium text-slate-500">
-              {formatEUR(revenueByVat.total)}
-            </span>
-          </div>
-          <ul className="space-y-3">
-            {revenueByVat.rows.map((r) => {
-              const pct =
-                revenueByVat.total > 0
-                  ? Math.round((r.amount / revenueByVat.total) * 100)
-                  : 0
-              return (
-                <li key={r.rate}>
-                  <div className="mb-1 flex items-center justify-between text-sm">
-                    <span className="font-medium text-slate-700">{r.rate} % MwSt</span>
-                    <span className="tabular-nums text-slate-600">
-                      {formatEUR(r.amount)}{' '}
-                      <span className="text-slate-400">({pct} %)</span>
-                    </span>
-                  </div>
-                  <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
-                    <div
-                      className="h-full rounded-full bg-slate-900"
-                      style={{ width: `${pct}%` }}
-                    />
-                  </div>
-                </li>
-              )
-            })}
-          </ul>
-        </section>
-      )}
-
-      {einnahmenOhneMwSt.length > 0 && (
-        <div
-          className={`rounded-xl border p-4 ${
-            hatAusgabenMitMwSt
-              ? 'border-amber-200 bg-amber-50'
-              : 'border-slate-200 bg-white'
-          }`}
-        >
-          <div className="mb-2 flex items-baseline justify-between">
-            <p
-              className={`text-xs font-medium uppercase tracking-wide ${
-                hatAusgabenMitMwSt ? 'text-amber-700' : 'text-slate-400'
-              }`}
-            >
-              Einnahmen ohne MwSt
-            </p>
-            <p
-              className={`text-sm font-semibold tabular-nums ${
-                hatAusgabenMitMwSt ? 'text-amber-700' : 'text-slate-700'
-              }`}
-            >
-              {formatEUR(summeOhneMwSt)}
-            </p>
-          </div>
-          {hatAusgabenMitMwSt && (
-            <p className="mb-3 text-xs text-amber-600">
-              Bei Ausgaben wurde diesen Monat MwSt gezahlt, bei diesen
-              Einnahmen nicht – bitte prüfen, ob das so gewollt ist.
-            </p>
-          )}
-          <div className="divide-y divide-slate-100 overflow-hidden rounded-lg border border-slate-100 bg-white">
-            {einnahmenOhneMwSt.map((t) => (
-              <div key={t.id} className="flex items-center gap-3 px-3 py-2.5">
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500">
-                  <Icon name={iconFor(t.category)} size={15} />
-                </span>
-                <span className="min-w-0 flex-1 truncate text-sm text-slate-700">
-                  {t.category}
-                </span>
-                <span className="text-sm font-medium tabular-nums text-slate-800">
-                  {formatEUR(t.amount)}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
         {/* Tortendiagramm */}
         <section className="card p-4 sm:p-5">
@@ -451,6 +344,7 @@ export default function ReportsView({ transactions, jobs, month }: Props) {
                       outerRadius={78}
                       paddingAngle={2}
                       stroke="none"
+                      isAnimationActive={false}
                     >
                       {byCategory.map((_, i) => (
                         <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
@@ -518,8 +412,8 @@ export default function ReportsView({ transactions, jobs, month }: Props) {
                     boxShadow: '0 4px 12px rgba(0,0,0,0.06)',
                   }}
                 />
-                <Bar dataKey="einnahme" name="Einnahmen" fill="#059669" radius={[3, 3, 0, 0]} />
-                <Bar dataKey="ausgabe" name="Ausgaben" fill="#e11d48" radius={[3, 3, 0, 0]} />
+                <Bar dataKey="einnahme" name="Einnahmen" fill="#059669" radius={[3, 3, 0, 0]} isAnimationActive={false} />
+                <Bar dataKey="ausgabe" name="Ausgaben" fill="#e11d48" radius={[3, 3, 0, 0]} isAnimationActive={false} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -534,129 +428,346 @@ export default function ReportsView({ transactions, jobs, month }: Props) {
         </section>
       </div>
 
-      {jobStats.ranking.length > 0 && (
-        <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
-          {/* Auftrags-Kennzahlen */}
-          <section className="card p-4 sm:p-5">
-            <h2 className="mb-4 text-sm font-semibold text-slate-800">
-              Auftrags-Kennzahlen
-            </h2>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="min-w-0 rounded-xl border border-slate-200 bg-slate-50/60 p-3">
-                <p className="text-xs text-slate-400">Ø Auftragswert</p>
-                <p className="mt-1 truncate text-lg font-semibold tabular-nums text-slate-900">
-                  {jobStats.avgValue != null ? formatEUR(jobStats.avgValue) : '–'}
-                </p>
-              </div>
-              <div className="min-w-0 rounded-xl border border-slate-200 bg-slate-50/60 p-3">
-                <p className="text-xs text-slate-400">Ø Marge</p>
-                <p className="mt-1 truncate text-lg font-semibold tabular-nums text-slate-900">
-                  {jobStats.avgMargin != null
-                    ? `${jobStats.avgMargin.toFixed(0)} %`
-                    : '–'}
-                </p>
-              </div>
-            </div>
-            <div className="mt-3 min-w-0 rounded-xl border border-slate-200 bg-slate-50/60 p-3">
-              <p className="text-xs text-slate-400">Ø Auftragsdurchlaufzeit</p>
-              <p className="mt-1 truncate text-lg font-semibold tabular-nums text-slate-900">
-                {jobStats.avgDuration != null
-                  ? `${jobStats.avgDuration.toFixed(0)} Tage`
-                  : '–'}
-              </p>
-            </div>
-            <p className="mt-3 text-xs text-slate-400">
-              Basiert auf {jobStats.finishedCount} abgeschlossenen{' '}
-              {jobStats.finishedCount === 1 ? 'Auftrag' : 'Aufträgen'}.
-            </p>
-          </section>
-
-          {/* Top-Aufträge nach Gewinn */}
-          <section className="card p-4 sm:p-5">
-            <h2 className="mb-4 text-sm font-semibold text-slate-800">
-              Top-Aufträge nach Gewinn
-            </h2>
-            <ul className="space-y-1">
-              {jobStats.ranking.slice(0, 5).map((r) => (
-                <li
-                  key={r.job.id}
-                  className="flex items-center gap-3 rounded-lg px-1 py-2.5"
+      {/* Auffälligkeit bleibt sichtbar – eine Warnung, die man aufklappen
+          muss, ist keine Warnung. Ohne Warnlage steht sie unter Umsatzsteuer. */}
+      {einnahmenOhneMwSt.length > 0 && hatAusgabenMitMwSt && (
+        <div
+                  className={`rounded-xl border p-4 ${
+                    hatAusgabenMitMwSt
+                      ? 'border-amber-200 bg-amber-50'
+                      : 'border-slate-200 bg-white'
+                  }`}
                 >
-                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500">
-                    <Icon name="folder" size={15} />
-                  </span>
-                  <span className="min-w-0 flex-1 truncate text-sm text-slate-700">
-                    {r.job.name}
-                  </span>
-                  <span
-                    className={`shrink-0 text-sm font-semibold tabular-nums ${
-                      r.profit >= 0 ? 'text-slate-900' : 'text-rose-600'
-                    }`}
-                  >
-                    {formatEURSigned(r.profit)}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </section>
-        </div>
+                  <div className="mb-2 flex items-baseline justify-between">
+                    <p
+                      className={`text-xs font-medium uppercase tracking-wide ${
+                        hatAusgabenMitMwSt ? 'text-amber-700' : 'text-slate-400'
+                      }`}
+                    >
+                      Einnahmen ohne MwSt
+                    </p>
+                    <p
+                      className={`text-sm font-semibold tabular-nums ${
+                        hatAusgabenMitMwSt ? 'text-amber-700' : 'text-slate-700'
+                      }`}
+                    >
+                      {formatEUR(summeOhneMwSt)}
+                    </p>
+                  </div>
+                  {hatAusgabenMitMwSt && (
+                    <p className="mb-3 text-xs text-amber-600">
+                      Bei Ausgaben wurde diesen Monat MwSt gezahlt, bei diesen
+                      Einnahmen nicht – bitte prüfen, ob das so gewollt ist.
+                    </p>
+                  )}
+                  <div className="divide-y divide-slate-100 overflow-hidden rounded-lg border border-slate-100 bg-white">
+                    {einnahmenOhneMwSt.map((t) => (
+                      <div key={t.id} className="flex items-center gap-3 px-3 py-2.5">
+                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500">
+                          <Icon name={iconFor(t.category)} size={15} />
+                        </span>
+                        <span className="min-w-0 flex-1 truncate text-sm text-slate-700">
+                          {t.category}
+                        </span>
+                        <span className="text-sm font-medium tabular-nums text-slate-800">
+                          {formatEUR(t.amount)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
       )}
 
-      {(jobsByRate.rate19.length > 0 || jobsByRate.rate0.length > 0) && (
-        <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
-          <JobVatTable title="Aufträge mit 19 % MwSt" rows={jobsByRate.rate19} />
-          <JobVatTable title="Aufträge mit 0 % MwSt" rows={jobsByRate.rate0} />
-        </div>
+      {(hasVat || revenueByVat.rows.length > 0 || jobsByRate.rate19.length > 0 ||
+        jobsByRate.rate0.length > 0) && (
+        <Collapsible
+          title="Umsatzsteuer"
+          summary={hasVat ? `Zahllast ${formatEURSigned(vat.zahllast)}` : undefined}
+        >
+          <div className="space-y-5">
+            {hasVat && (
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                <KpiCard
+                  label="MwSt vereinnahmt"
+                  value={formatEUR(vat.vereinnahmt)}
+                  tone="slate"
+                />
+                <KpiCard
+                  label="MwSt gezahlt"
+                  value={formatEUR(vat.gezahlt)}
+                  tone="slate"
+                />
+                <KpiCard
+                  label="Zahllast"
+                  value={formatEURSigned(vat.zahllast)}
+                  tone={vat.zahllast >= 0 ? 'slate' : 'rose'}
+                  className="col-span-2 sm:col-span-1"
+                />
+              </div>
+            )}
+            {revenueByVat.rows.length > 0 && (
+              <section className="card p-4 sm:p-5">
+                <div className="mb-4 flex items-baseline justify-between">
+                  <h2 className="text-sm font-semibold text-slate-800">
+                    Umsatz nach Steuersatz
+                  </h2>
+                  <span className="text-sm font-medium text-slate-500">
+                    {formatEUR(revenueByVat.total)}
+                  </span>
+                </div>
+                <ul className="space-y-3">
+                  {revenueByVat.rows.map((r) => {
+                    const pct =
+                      revenueByVat.total > 0
+                        ? Math.round((r.amount / revenueByVat.total) * 100)
+                        : 0
+                    return (
+                      <li key={r.rate}>
+                        <div className="mb-1 flex items-center justify-between text-sm">
+                          <span className="font-medium text-slate-700">{r.rate} % MwSt</span>
+                          <span className="tabular-nums text-slate-600">
+                            {formatEUR(r.amount)}{' '}
+                            <span className="text-slate-400">({pct} %)</span>
+                          </span>
+                        </div>
+                        <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
+                          <div
+                            className="h-full rounded-full bg-slate-900"
+                            style={{ width: `${pct}%` }}
+                          />
+                        </div>
+                      </li>
+                    )
+                  })}
+                </ul>
+              </section>
+            )}
+            {einnahmenOhneMwSt.length > 0 && !hatAusgabenMitMwSt && (
+              <div
+                        className={`rounded-xl border p-4 ${
+                          hatAusgabenMitMwSt
+                            ? 'border-amber-200 bg-amber-50'
+                            : 'border-slate-200 bg-white'
+                        }`}
+                      >
+                        <div className="mb-2 flex items-baseline justify-between">
+                          <p
+                            className={`text-xs font-medium uppercase tracking-wide ${
+                              hatAusgabenMitMwSt ? 'text-amber-700' : 'text-slate-400'
+                            }`}
+                          >
+                            Einnahmen ohne MwSt
+                          </p>
+                          <p
+                            className={`text-sm font-semibold tabular-nums ${
+                              hatAusgabenMitMwSt ? 'text-amber-700' : 'text-slate-700'
+                            }`}
+                          >
+                            {formatEUR(summeOhneMwSt)}
+                          </p>
+                        </div>
+                        {hatAusgabenMitMwSt && (
+                          <p className="mb-3 text-xs text-amber-600">
+                            Bei Ausgaben wurde diesen Monat MwSt gezahlt, bei diesen
+                            Einnahmen nicht – bitte prüfen, ob das so gewollt ist.
+                          </p>
+                        )}
+                        <div className="divide-y divide-slate-100 overflow-hidden rounded-lg border border-slate-100 bg-white">
+                          {einnahmenOhneMwSt.map((t) => (
+                            <div key={t.id} className="flex items-center gap-3 px-3 py-2.5">
+                              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500">
+                                <Icon name={iconFor(t.category)} size={15} />
+                              </span>
+                              <span className="min-w-0 flex-1 truncate text-sm text-slate-700">
+                                {t.category}
+                              </span>
+                              <span className="text-sm font-medium tabular-nums text-slate-800">
+                                {formatEUR(t.amount)}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+            )}
+            {(jobsByRate.rate19.length > 0 || jobsByRate.rate0.length > 0) && (
+              <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+                <JobVatTable title="Aufträge mit 19 % MwSt" rows={jobsByRate.rate19} />
+                <JobVatTable title="Aufträge mit 0 % MwSt" rows={jobsByRate.rate0} />
+              </div>
+            )}
+          </div>
+        </Collapsible>
       )}
 
-      {/* Filterbare Liste */}
-      <section>
-        {/* Auf dem Handy eine scrollbare Zeile statt vier umbrechender */}
-        <div className="no-scrollbar -mx-4 mb-3 flex snap-x gap-2 overflow-x-auto px-4 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0">
-          <FilterChip
-            active={!filterCat}
-            onClick={() => setFilterCat(null)}
-            label="Alle"
-          />
-          {allCats.map((c) => (
-            <FilterChip
-              key={c}
-              active={filterCat === c}
-              onClick={() => setFilterCat(c)}
-              label={c}
-              icon={c}
-            />
-          ))}
-        </div>
-        <div className="card divide-y divide-slate-100 overflow-hidden">
-          {filtered.map((t) => (
-            <div key={t.id} className="flex items-center gap-3 px-4 py-3">
-              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500">
-                <Icon name={iconFor(t.category)} size={16} />
-              </span>
-              <span className="min-w-0 flex-1">
-                <span className="block truncate text-sm text-slate-700">
-                  {t.category}
-                </span>
-                {t.note && (
-                  <span className="block truncate text-xs text-slate-400">
-                    {t.note}
-                  </span>
-                )}
-              </span>
-              <span
-                className={`text-sm font-semibold tabular-nums ${
-                  t.kind === 'einnahme' ? 'text-emerald-600' : 'text-slate-900'
-                }`}
-              >
-                {t.kind === 'einnahme' ? '+' : '−'}
-                {formatEUR(t.amount)}
-              </span>
+      {jobStats.ranking.length > 0 && (
+        <Collapsible
+          title="Aufträge"
+          summary={`${jobStats.finishedCount} abgeschlossen`}
+        >
+    <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+              {/* Auftrags-Kennzahlen */}
+              <section className="card p-4 sm:p-5">
+                <h2 className="mb-4 text-sm font-semibold text-slate-800">
+                  Auftrags-Kennzahlen
+                </h2>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="min-w-0 rounded-xl border border-slate-200 bg-slate-50/60 p-3">
+                    <p className="text-xs text-slate-400">Ø Auftragswert</p>
+                    <p className="mt-1 truncate text-lg font-semibold tabular-nums text-slate-900">
+                      {jobStats.avgValue != null ? formatEUR(jobStats.avgValue) : '–'}
+                    </p>
+                  </div>
+                  <div className="min-w-0 rounded-xl border border-slate-200 bg-slate-50/60 p-3">
+                    <p className="text-xs text-slate-400">Ø Marge</p>
+                    <p className="mt-1 truncate text-lg font-semibold tabular-nums text-slate-900">
+                      {jobStats.avgMargin != null
+                        ? `${jobStats.avgMargin.toFixed(0)} %`
+                        : '–'}
+                    </p>
+                  </div>
+                </div>
+                <div className="mt-3 min-w-0 rounded-xl border border-slate-200 bg-slate-50/60 p-3">
+                  <p className="text-xs text-slate-400">Ø Auftragsdurchlaufzeit</p>
+                  <p className="mt-1 truncate text-lg font-semibold tabular-nums text-slate-900">
+                    {jobStats.avgDuration != null
+                      ? `${jobStats.avgDuration.toFixed(0)} Tage`
+                      : '–'}
+                  </p>
+                </div>
+                <p className="mt-3 text-xs text-slate-400">
+                  Basiert auf {jobStats.finishedCount} abgeschlossenen{' '}
+                  {jobStats.finishedCount === 1 ? 'Auftrag' : 'Aufträgen'}.
+                </p>
+              </section>
+
+              {/* Top-Aufträge nach Gewinn */}
+              <section className="card p-4 sm:p-5">
+                <h2 className="mb-4 text-sm font-semibold text-slate-800">
+                  Top-Aufträge nach Gewinn
+                </h2>
+                <ul className="space-y-1">
+                  {jobStats.ranking.slice(0, 5).map((r) => (
+                    <li
+                      key={r.job.id}
+                      className="flex items-center gap-3 rounded-lg px-1 py-2.5"
+                    >
+                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500">
+                        <Icon name="folder" size={15} />
+                      </span>
+                      <span className="min-w-0 flex-1 truncate text-sm text-slate-700">
+                        {r.job.name}
+                      </span>
+                      <span
+                        className={`shrink-0 text-sm font-semibold tabular-nums ${
+                          r.profit >= 0 ? 'text-slate-900' : 'text-rose-600'
+                        }`}
+                      >
+                        {formatEURSigned(r.profit)}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </section>
             </div>
-          ))}
-        </div>
-      </section>
+        </Collapsible>
+      )}
+
+      <Collapsible
+        title="Alle Buchungen"
+        summary={`${monthTx.length}`}
+      >
+  {/* Auf dem Handy eine scrollbare Zeile statt vier umbrechender */}
+          <div className="no-scrollbar -mx-4 mb-3 flex snap-x gap-2 overflow-x-auto px-4 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0">
+            <FilterChip
+              active={!filterCat}
+              onClick={() => setFilterCat(null)}
+              label="Alle"
+            />
+            {allCats.map((c) => (
+              <FilterChip
+                key={c}
+                active={filterCat === c}
+                onClick={() => setFilterCat(c)}
+                label={c}
+                icon={c}
+              />
+            ))}
+          </div>
+          <div className="card divide-y divide-slate-100 overflow-hidden">
+            {filtered.map((t) => (
+              <div key={t.id} className="flex items-center gap-3 px-4 py-3">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500">
+                  <Icon name={iconFor(t.category)} size={16} />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-sm text-slate-700">
+                    {t.category}
+                  </span>
+                  {t.note && (
+                    <span className="block truncate text-xs text-slate-400">
+                      {t.note}
+                    </span>
+                  )}
+                </span>
+                <span
+                  className={`text-sm font-semibold tabular-nums ${
+                    t.kind === 'einnahme' ? 'text-emerald-600' : 'text-slate-900'
+                  }`}
+                >
+                  {t.kind === 'einnahme' ? '+' : '−'}
+                  {formatEUR(t.amount)}
+                </span>
+              </div>
+            ))}
+          </div>
+      
+      </Collapsible>
     </div>
+  )
+}
+
+/**
+ * Aufklappbarer Abschnitt. Die wichtigste Zahl steht schon im
+ * zugeklappten Kopf – aufklappen bringt Details, nicht die Kernaussage.
+ */
+function Collapsible({
+  title,
+  summary,
+  children,
+}: {
+  title: string
+  summary?: string
+  children: React.ReactNode
+}) {
+  const [open, setOpen] = useState(false)
+  return (
+    <section className="card overflow-hidden">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+        className="row-tap flex min-h-touch w-full items-center gap-3 px-4 py-3.5 text-left"
+      >
+        <span className="min-w-0 flex-1 truncate text-sm font-semibold text-slate-800">
+          {title}
+        </span>
+        {summary && (
+          <span className="shrink-0 text-sm font-medium tabular-nums text-slate-500">
+            {summary}
+          </span>
+        )}
+        <Icon
+          name="chevron-right"
+          size={16}
+          className={`shrink-0 text-slate-400 transition ${open ? 'rotate-90' : ''}`}
+        />
+      </button>
+      {open && (
+        <div className="section-body border-t border-slate-100 p-3 sm:p-5">
+          {children}
+        </div>
+      )}
+    </section>
   )
 }
 

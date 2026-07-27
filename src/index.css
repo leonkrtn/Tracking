@@ -119,6 +119,13 @@ html.sheet-open #root {
   .sheet-handle {
     @apply mx-auto mb-3 h-1 w-9 shrink-0 rounded-full bg-slate-200 sm:hidden;
   }
+
+  /* Inhalt eines aufgeklappten Abschnitts. Ganze Blöcke darin tragen sonst
+     ihren eigenen Rahmen – das ergäbe Kasten im Kasten. Kennzahl-Kacheln
+     (div.card) behalten ihren Rahmen bewusst. */
+  .section-body section.card {
+    @apply border-0 p-0 shadow-none;
+  }
 }
 
 @layer utilities {
